@@ -25,27 +25,27 @@ Installation
 
 Keyboard shortcuts
 ==================
-- Ctrl-Shift-T   Create tab
-- Ctrl-Shift-W   Close tab
-- Ctrl-Shift-H   Horizontal split
-- Ctrl-Shift-V   Vertical split
-- Ctrl-Shift-C   Close active terminal
-- Ctrl-Shift-J   Select previous terminal in tab
-- Ctrl-Shift-K   Select next terminal in tab
-- Ctrl-Shift-U   Select previous tab
-- Ctrl-Shift-I   Select next tab
-- Ctrl-Shift-O   Select previous window
-- Ctrl-Shift-P   Select next window
-- Ctrl-Shift-R   Rename tab
-- Ctrl-Shift-N   New window
-- Ctrl-Shift-F   Find terminal (type what you want to search for, cycle through the results with up/down-arrows)
-- Ctrl-Shift-A   Make terminal smaller horizontally
-- Ctrl-Shift-S   Make terminal bigger horizontally
-- Ctrl-Shift-Z   Make terminal smaller vertically
-- Ctrl-Shift-X   Make terminal bigger vertically
-- Ctrl-Shift-F1  Select tab #1
-- ...
-- Ctrl-Shift-F12 Select tab #12
+- **Ctrl-Shift-T**   Create tab
+- **Ctrl-Shift-W**   Close tab
+- **Ctrl-Shift-H**   Horizontal split
+- **Ctrl-Shift-V**   Vertical split
+- **Ctrl-Shift-C**   Close active terminal
+- **Ctrl-Shift-J**   Select previous terminal in tab
+- **Ctrl-Shift-K**   Select next terminal in tab
+- **Ctrl-Shift-U**   Select previous tab
+- **Ctrl-Shift-I**   Select next tab
+- **Ctrl-Shift-O**   Select previous window
+- **Ctrl-Shift-P**   Select next window
+- **Ctrl-Shift-R**   Rename tab
+- **Ctrl-Shift-N**   New window
+- **Ctrl-Shift-F**   Find terminal (type what you want to search for, cycle through the results with up/down-arrows)
+- **Ctrl-Shift-A**   Make terminal smaller horizontally
+- **Ctrl-Shift-S**   Make terminal bigger horizontally
+- **Ctrl-Shift-Z**   Make terminal smaller vertically
+- **Ctrl-Shift-X**   Make terminal bigger vertically
+- **Ctrl-Shift-F1**  Select tab #1
+- *...*
+- **Ctrl-Shift-F12** Select tab #12
 
 Tips and tricks
 ===============
