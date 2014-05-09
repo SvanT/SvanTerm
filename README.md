@@ -1,5 +1,3 @@
-SvanTerm
-========
 SvanTerm is a terminal window manager for cygwin which supports tabbing, splitting of windows, moving splits around, searching for windows and more.
 
 ![SvanTerm screenshot](/screenshot.png "SvanTerm screenshot")
