@@ -19,7 +19,7 @@ Installation
 	- wget
 	- whois
 	(you can always run the installer again to install more packages)
-3. Grab the [latest release](releases) of SvanTerm
+3. Grab the [latest release](https://github.com/SvanT/svanterm/releases) of SvanTerm
 4. Unpack the SvanTerm package
 5. Run svanterm.exe
 
