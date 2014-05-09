@@ -58,7 +58,7 @@ Tips and tricks
 Development requirements
 ========================
 - Python 2.7 (Windows x86-64)
-	- 64-bits https://www.python.org/download
+	- https://www.python.org/download
 - PyWin32 (amd64-py2.7)
 	- http://sourceforge.net/projects/pywin32/files/pywin32/
 - wxPython (win64-py27)
