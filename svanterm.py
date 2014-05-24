@@ -26,7 +26,7 @@ import wx
 import wx.lib.agw.aui as aui
 import wx.lib.agw.ultimatelistctrl as ultimatelistctrl
 
-PROGRAM_TITLE = "SvanTerm 0.1"
+PROGRAM_TITLE = "SvanTerm 0.2"
 user32 = windll.user32
 
 DOCK_TOP = 1
