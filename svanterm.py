@@ -1,15 +1,12 @@
 # Todos:
 # - Integrate tag dragging between windows with normal dragging in tabcontrol
 # - Broadcast to terminals
-# - Too many focus events are triggered which makes some performance overhead
 # - Ctrl + Shift + number to select terminal (with hints)
 # - Make splitter bigger horizontally and vertically
 # - Split into files
 # - Comment the code :)
 # - Detect missing cygwin on start (seems to die silently now)
 # - Add recommended bashrc / some tips and tricks setting up / using cygwin
-# - When docking to a new window, you cannot re-select the window where it came from
-#       - might be an error where hwnd_to_terminal_window/active_terminal is not updated correctly on re-docking
 
 from ctypes import *
 import pywintypes
@@ -608,7 +605,7 @@ class SvanTerm(wx.App):
         except (wx._core.PyDeadObjectError, AttributeError):
             pass
 
-    def focus_terminal(self, terminal, set_focus=True):
+    def focus_terminal(self, terminal, set_focus=True, verify_foreground_window=None):
         if terminal != self.last_active_terminal:
             self.unfocus_terminal(self.last_active_terminal)
             self.last_active_terminal = terminal
@@ -620,9 +617,16 @@ class SvanTerm(wx.App):
         terminal.GetParentTab().active_terminal = terminal
 
         if set_focus:
-            wx.CallAfter(win32gui.SetFocus, terminal.terminal_hwnd)
+            wx.CallAfter(self.set_focus, terminal.terminal_hwnd, verify_foreground_window)
 
         self.update_title(terminal.terminal_hwnd)
+
+    def set_focus(self, hwnd, verify_foreground_window=None):
+        if verify_foreground_window:
+            if not win32gui.GetForegroundWindow() == verify_foreground_window:
+                return
+
+        win32gui.SetFocus(hwnd)
 
     def process_hotkey(self, keycode, window):
         active_terminal = window.tabs.GetCurrentPage().active_terminal
@@ -775,9 +779,8 @@ class SvanTerm(wx.App):
 
                     # Check that there is no other window actually having the
                     # focus to prevent race conditions with queued events
-                    if (terminal
-                            and win32gui.GetForegroundWindow() == hwnd):
-                        self.focus_terminal(terminal)
+                    if terminal:
+                        self.focus_terminal(terminal, verify_foreground_window=hwnd)
 
             except wx._core.PyDeadObjectError:
                 pass
