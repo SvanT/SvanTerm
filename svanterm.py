@@ -109,10 +109,6 @@ class Terminal(wx.Window):
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         self.text.Bind(wx.EVT_MIDDLE_DOWN, self.Destroy)
 
-        self.terminal_thread_id, processId = (
-            win32process.GetWindowThreadProcessId(
-                self.terminal_hwnd))
-
         win32gui.SetWindowLong(self.terminal_hwnd, win32con.GWL_STYLE,
                                win32con.WS_CHILD | win32con.WS_VSCROLL)
         win32gui.SetParent(self.terminal_hwnd, self.GetHandle())
@@ -472,7 +468,6 @@ class SvanTerm(wx.App):
         self.move_window_thread = MoveWindowThread(self)
         self.move_window_thread.start()
         self.find_dialog = FindDialog(self)
-        self.thread_id = win32api.GetCurrentThreadId()
 
         self.hwnd_to_terminal_window = {}
         self.hwnd_to_terminal = {}
@@ -623,14 +618,6 @@ class SvanTerm(wx.App):
         terminal.GetParentTab().active_terminal = terminal
 
         if set_focus:
-            # Attach thread to allow set focus to the terminal
-            # This has to be done every time in case the user has opened
-            # the terminals settings dialog which seems to detach thread input
-            # from our thread
-            win32process.AttachThreadInput(
-                self.thread_id, terminal.terminal_thread_id, True)
-            wx.CallAfter(win32gui.SetForegroundWindow,
-                         terminal.GetParentTab().GetGrandParent().GetHandle())
             wx.CallAfter(win32gui.SetFocus, terminal.terminal_hwnd)
 
         self.update_title(terminal.terminal_hwnd)
