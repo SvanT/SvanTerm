@@ -812,7 +812,7 @@ class SvanTerm(wx.App):
         self.dock_hint.Show()
 
     def FinishDragDrop(self):
-        self.dock_hint.Hide()
+        wx.CallAfter(self.dock_hint.Hide)
 
         if self.dock_from == self.dock_to:
             self.dock_from = None
