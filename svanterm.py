@@ -7,6 +7,7 @@
 # - Comment the code :)
 # - Detect missing cygwin on start (seems to die silently now)
 # - Add recommended bashrc / some tips and tricks setting up / using cygwin
+# - Too many focus events are sent when splitting to new window and then selecting a terminal in the old window
 
 from ctypes import *
 import pywintypes
