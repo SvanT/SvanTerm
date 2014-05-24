@@ -8,6 +8,8 @@
 # - Comment the code :)
 # - Detect missing cygwin on start (seems to die silently now)
 # - Add recommended bashrc / some tips and tricks setting up / using cygwin
+# - When docking to a new window, you cannot re-select the window where it came from
+#       - might be an error where hwnd_to_terminal_window/active_terminal is not updated correctly on re-docking
 
 from ctypes import *
 import pywintypes
