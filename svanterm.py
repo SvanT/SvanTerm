@@ -452,7 +452,7 @@ class MoveWindowThread(threading.Thread):
                 win32gui.MoveWindow(terminal.terminal_hwnd, 0, 20, max(
                     size[0], 100), max(size[1] - 20, 100), True)
 
-            time.sleep(0.1)
+            time.sleep(0.05)
 
 
 
