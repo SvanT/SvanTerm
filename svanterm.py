@@ -6,12 +6,15 @@
 # - Make splitter bigger horizontally and vertically
 # - Split into files
 # - Comment the code :)
+# - Detect missing cygwin on start (seems to die silently now)
+# - Add recommended bashrc / some tips and tricks setting up / using cygwin
 
 from ctypes import *
 import pywintypes
-import threading
+import Queue
 import subprocess
 import sys
+import threading
 import time
 import traceback
 import win32api
@@ -152,10 +155,7 @@ class Terminal(wx.Window):
         self.app.dock_to = self
 
     def OnSize(self, event=None):
-        size = event.GetSize()
-        # Minimum size of 100x100, really small sizes messes up the terminal
-        win32gui.MoveWindow(self.terminal_hwnd, 0, 20, max(
-            size[0], 100), max(size[1] - 20, 100), True)
+        self.app.move_window_thread.request_queue.put(self)
         self.text.SetSize((self.GetSize()[0], 20))
 
     def Destroy(self, event=None):
@@ -432,6 +432,29 @@ class EventThread(threading.Thread):
                     win32event.INFINITE) == win32event.WAIT_OBJECT_0:
                 wx.CallAfter(self.app.spawn_window)
 
+class MoveWindowThread(threading.Thread):
+    def __init__(self, app):
+        super(MoveWindowThread, self).__init__()
+        self.app = app
+        self.daemon = True
+        self.request_queue = Queue.Queue()
+
+    def run(self):
+        while 1:
+            terminals = {}
+            terminals[self.request_queue.get(True)] = True
+            for i in xrange(self.request_queue.qsize()):
+                terminals[self.request_queue.get()] = True
+
+            for terminal in terminals.iterkeys():
+                size = terminal.GetSize()
+                # Minimum size of 100x100, really small sizes messes up the terminal
+                win32gui.MoveWindow(terminal.terminal_hwnd, 0, 20, max(
+                    size[0], 100), max(size[1] - 20, 100), True)
+
+            time.sleep(0.1)
+
+
 
 class SvanTerm(wx.App):
 
@@ -446,6 +469,8 @@ class SvanTerm(wx.App):
         self.spawn_terminal()
         self.event_tread = EventThread(self)
         self.event_tread.start()
+        self.move_window_thread = MoveWindowThread(self)
+        self.move_window_thread.start()
         self.find_dialog = FindDialog(self)
         self.thread_id = win32api.GetCurrentThreadId()
 
