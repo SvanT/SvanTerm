@@ -446,7 +446,7 @@ class MoveWindowThread(threading.Thread):
                 size = terminal.GetSize()
                 # Minimum size of 100x100, really small sizes messes up the terminal
                 win32gui.MoveWindow(terminal.terminal_hwnd, 0, 20, max(
-                    size[0], 100), max(size[1] - 20, 100), True)
+                    size[0], 150), max(size[1] - 20, 150), True)
 
             time.sleep(0.05)
 
