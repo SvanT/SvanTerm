@@ -322,7 +322,6 @@ class TerminalWindow(wx.Frame):
         self.Show(True)
 
         self.app.hwnd_to_terminal_window[self.GetHandle()] = self
-        self.app.SetTopWindow(self)
         self.Bind(wx.EVT_CLOSE, self.OnClose)
 
     def OnClose(self, event):
@@ -554,6 +553,9 @@ class SvanTerm(wx.App):
         win = wx.FindWindowAtPoint((x, y))
 
         if wParam == win32con.WM_LBUTTONDOWN:
+            if isinstance(win, aui.auibook.AuiTabCtrl):
+                self.focus_terminal(win.GetParent().GetCurrentPage().active_terminal)
+
             if isinstance(win, TerminalHeader):
                 self.InitiateDragDrop(win.GetParent())
 
