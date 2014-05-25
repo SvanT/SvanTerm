@@ -8,7 +8,7 @@
 # - Add recommended bashrc / some tips and tricks setting up / using cygwin
 # - Might use a smarter way to get hwnd of new mintty, for example using a unique window class, this might remove the dependency of win32process
 # - Move windows to front in the Z-axis while docking
-# - Look into doing movewindow completely async
+# - Look into doing movewindow/setwindowpos completely async
 
 from ctypes import *
 import pywintypes
