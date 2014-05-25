@@ -623,9 +623,9 @@ class SvanTerm(wx.App):
         self.update_title(terminal.terminal_hwnd)
 
     def set_focus(self, hwnd, verify_foreground_window=None):
-        if verify_foreground_window:
-            if not win32gui.GetForegroundWindow() == verify_foreground_window:
-                return
+        if (verify_foreground_window and not
+                win32gui.GetForegroundWindow() == verify_foreground_window):
+            return
 
         win32gui.SetFocus(hwnd)
 
@@ -780,7 +780,7 @@ class SvanTerm(wx.App):
 
                     # Check that there is no other window actually having the
                     # focus to prevent race conditions with queued events
-                    if terminal:
+                    if terminal and not self.clicked_terminal:
                         self.focus_terminal(terminal, verify_foreground_window=hwnd)
 
             except wx._core.PyDeadObjectError:
