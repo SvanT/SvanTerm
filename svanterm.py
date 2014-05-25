@@ -2,12 +2,13 @@
 # - Integrate tag dragging between windows with normal dragging in tabcontrol
 # - Broadcast to terminals
 # - Ctrl + Shift + number to select terminal (with hints)
-# - Make splitter bigger horizontally and vertically
 # - Split into files
 # - Comment the code :)
 # - Detect missing cygwin on start (seems to die silently now)
 # - Add recommended bashrc / some tips and tricks setting up / using cygwin
-# - Too many focus events are sent when splitting to new window and then selecting a terminal in the old window
+# - Might use a smarter way to get hwnd of new mintty, for example using a unique window class, this might remove the dependency of win32process
+# - Move windows to front in the Z-axis while docking
+# - Look into doing movewindow completely async
 
 from ctypes import *
 import pywintypes
