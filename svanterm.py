@@ -621,16 +621,22 @@ class SvanTerm(wx.App):
         terminal.GetParentTab().active_terminal = terminal
 
         if set_focus:
-            wx.CallAfter(self.set_focus, terminal.terminal_hwnd, verify_foreground_window)
+            wx.CallAfter(self.set_focus, terminal, verify_foreground_window)
 
         self.update_title(terminal.terminal_hwnd)
 
-    def set_focus(self, hwnd, verify_foreground_window=None):
+    def set_focus(self, terminal, verify_foreground_window=None):
         if (verify_foreground_window and not
                 win32gui.GetForegroundWindow() == verify_foreground_window):
             return
 
-        win32gui.SetFocus(hwnd)
+        try:
+            win32gui.SetFocus(terminal.terminal_hwnd)
+
+        # We might get access denied if mintty has stealed the terminal (i.e. the settings dialog has been opened)
+        except pywintypes.error:
+            win32gui.SetParent(terminal.terminal_hwnd, terminal.GetHandle())
+            win32gui.SetFocus(terminal.terminal_hwnd)
 
     def process_hotkey(self, keycode, window):
         active_terminal = window.tabs.GetCurrentPage().active_terminal
