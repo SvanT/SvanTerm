@@ -708,6 +708,8 @@ class SvanTerm(wx.App):
 
         elif keycode == ord("O") or keycode == ord("P"):
             hwnd_list = self.hwnd_to_terminal_window.keys()
+            if len(hwnd_list) == 1:
+                return
             window_index = hwnd_list.index(window.GetHandle())
 
             if keycode == ord("O"):
