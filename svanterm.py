@@ -445,7 +445,7 @@ class MoveWindowThread(threading.Thread):
 
             for terminal in terminals.iterkeys():
                 size = terminal.GetSize()
-                # Minimum size of 100x100, really small sizes messes up the terminal
+                # Minimum size of 150x150, really small sizes messes up the terminal
                 win32gui.MoveWindow(terminal.terminal_hwnd, 0, 20, max(
                     size[0], 150), max(size[1] - 20, 150), True)
 
@@ -711,10 +711,10 @@ class SvanTerm(wx.App):
             window_index = hwnd_list.index(window.GetHandle())
 
             if keycode == ord("O"):
-                win32gui.SetForegroundWindow(
+                win32gui.SetFocus(
                     hwnd_list[(window_index - 1) % len(hwnd_list)])
             else:
-                win32gui.SetForegroundWindow(
+                win32gui.SetFocus(
                     hwnd_list[(window_index + 1) % len(hwnd_list)])
 
         elif keycode == ord("W"):
