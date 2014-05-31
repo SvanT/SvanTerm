@@ -345,7 +345,8 @@ class FindDialog(wx.Frame):
 
     def __init__(self, app):
         super(FindDialog, self).__init__(
-            None, -1, PROGRAM_TITLE, size=(400, 200), style=wx.STAY_ON_TOP)
+            None, -1, PROGRAM_TITLE, size=(400, 200),
+            style=wx.STAY_ON_TOP | wx.FRAME_NO_TASKBAR)
         self.app = app
         self.SetTransparent(200)
         self.text = wx.TextCtrl(
