@@ -409,8 +409,7 @@ class SvanTerm(wx.App):
             return False
 
         self.spawn_terminal()
-        self.event_tread = EventThread()
-        self.event_tread.start()
+        EventThread().start()
         self.move_window_thread = MoveWindowThread()
         self.move_window_thread.start()
         self.find_dialog = FindDialog()
@@ -682,6 +681,7 @@ class SvanTerm(wx.App):
         new_tab = Container(new_window.tabs)
         new_tab.active_terminal = Terminal(new_tab)
         new_window.tabs.AddTab(new_tab, new_tab.active_terminal.title.ljust(8, " ")[:20])
+        win32gui.SetForegroundWindow(new_window.GetHandle())
 
     def build_terminal_list(self, root):
         if not len(root.GetChildren()):
