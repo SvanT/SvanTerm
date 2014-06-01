@@ -69,20 +69,16 @@ class TerminalHeader(wx.StaticText):
         dc = wx.AutoBufferedPaintDCFactory(self)
 
         if self.enabled:
-            dc.GradientFillLinear(
-                self.GetClientRect(), wx.RED,
-                wx.Colour(100, 0, 0), wx.SOUTH)
+            dc.GradientFillLinear(self.GetClientRect(), wx.RED, wx.Colour(100, 0, 0), wx.SOUTH)
             dc.SetTextForeground(wx.WHITE)
         else:
-            dc.GradientFillLinear(
-                self.GetClientRect(), wx.Colour(220, 220, 220),
-                wx.Colour(150, 150, 150), wx.SOUTH)
+            dc.GradientFillLinear(self.GetClientRect(), wx.Colour(220, 220, 220),
+                                  wx.Colour(150, 150, 150), wx.SOUTH)
             dc.SetTextForeground(self.GetForegroundColour())
 
         dc.SetFont(wx.Font(12, wx.MODERN, wx.NORMAL, wx.NORMAL))
         tw, th = dc.GetTextExtent(self.label)
-        dc.DrawText(self.label, (self.GetSize()[0] - tw) / 2,
-                    (self.GetSize()[1] - th) / 2)
+        dc.DrawText(self.label, (self.GetSize()[0] - tw) / 2, (self.GetSize()[1] - th) / 2)
 
     def on_size(self, event):
         self.Refresh()
@@ -95,13 +91,12 @@ class TerminalHeader(wx.StaticText):
 
 class Terminal(wx.Window):
 
-    def __init__(self, parent, app):
+    def __init__(self, parent):
         super(Terminal, self).__init__(parent)
-        self.app = app
         self.SetBackgroundColour(wx.BLACK)
 
-        self.terminal_hwnd = get_hwnd_for_pid(self.app.cached_terminal.pid)
-        self.app.hwnd_to_terminal[self.terminal_hwnd] = self
+        self.terminal_hwnd = get_hwnd_for_pid(app.cached_terminal.pid)
+        app.hwnd_to_terminal[self.terminal_hwnd] = self
 
         self.title = win32gui.GetWindowText(self.terminal_hwnd)
         self.text = TerminalHeader(self, self.title)
@@ -115,7 +110,7 @@ class Terminal(wx.Window):
         win32gui.SetParent(self.terminal_hwnd, self.GetHandle())
         self.GetParent().OnSize()
         win32gui.ShowWindow(self.terminal_hwnd, win32con.SW_SHOW)
-        self.app.spawn_terminal()
+        app.spawn_terminal()
 
     def ShowDockHint(self, mouse_pos):
         size = self.GetClientSize()
@@ -125,47 +120,41 @@ class Terminal(wx.Window):
 
         if abs(from_center[0]) > abs(from_center[1]):
             if from_center[0] <= 0:
-                self.app.dock_pos = DOCK_LEFT
+                app.dock_pos = DOCK_LEFT
             else:
-                self.app.dock_pos = DOCK_RIGHT
+                app.dock_pos = DOCK_RIGHT
         else:
             if from_center[1] <= 0:
-                self.app.dock_pos = DOCK_TOP
+                app.dock_pos = DOCK_TOP
             else:
-                self.app.dock_pos = DOCK_BOTTOM
+                app.dock_pos = DOCK_BOTTOM
 
-        if self.app.dock_pos == DOCK_LEFT:
-            self.app.dock_hint.SetRect(
-                wx.Rect(terminal_pos[0], terminal_pos[1], center[0], size[1]))
-        elif self.app.dock_pos == DOCK_RIGHT:
-            self.app.dock_hint.SetRect(
-                wx.Rect(terminal_pos[0] + center[0], terminal_pos[1],
-                        center[0], size[1]))
-        elif self.app.dock_pos == DOCK_TOP:
-            self.app.dock_hint.SetRect(
-                wx.Rect(terminal_pos[0], terminal_pos[1], size[0], center[1]))
-        elif self.app.dock_pos == DOCK_BOTTOM:
-            self.app.dock_hint.SetRect(
-                wx.Rect(terminal_pos[0], terminal_pos[1] + center[1],
-                        size[0], center[1]))
+        if app.dock_pos == DOCK_LEFT:
+            app.dock_hint.SetRect(wx.Rect(terminal_pos[0], terminal_pos[1], center[0], size[1]))
+        elif app.dock_pos == DOCK_RIGHT:
+            app.dock_hint.SetRect(wx.Rect(terminal_pos[0] + center[0], terminal_pos[1],
+                                          center[0], size[1]))
+        elif app.dock_pos == DOCK_TOP:
+            app.dock_hint.SetRect(wx.Rect(terminal_pos[0], terminal_pos[1], size[0], center[1]))
+        elif app.dock_pos == DOCK_BOTTOM:
+            app.dock_hint.SetRect(wx.Rect(terminal_pos[0], terminal_pos[1] + center[1],
+                                          size[0], center[1]))
 
-        self.app.dock_to = self
+        app.dock_to = self
 
     def OnSize(self, event=None):
-        self.app.move_window_thread.request_queue.put(self)
+        app.move_window_thread.request_queue.put(self)
         self.text.SetSize((self.GetSize()[0], 20))
 
     def Destroy(self, event=None):
-        terminal_list = self.app.build_terminal_list(self.GetParentTab())
+        terminal_list = app.build_terminal_list(self.GetParentTab())
         terminal_index = terminal_list.index(self)
 
         if len(terminal_list) > 1:
             if self.GetGrandParent().panel1 == self.GetParent():
-                self.app.focus_terminal(
-                    terminal_list[terminal_list.index(self) + 1])
+                app.focus_terminal(terminal_list[terminal_list.index(self) + 1])
             else:
-                self.app.focus_terminal(
-                    terminal_list[terminal_list.index(self) - 1])
+                app.focus_terminal(terminal_list[terminal_list.index(self) - 1])
 
         self.GetParent().Hide()
         wx.CallAfter(self.GetParent().Destroy)
@@ -185,22 +174,21 @@ class Terminal(wx.Window):
             pass
 
     def __del__(self):
-        del self.app.hwnd_to_terminal[self.terminal_hwnd]
+        del app.hwnd_to_terminal[self.terminal_hwnd]
         super(Terminal, self).__del__()
 
 
 class Splitter(wx.SplitterWindow):
 
-    def __init__(self, parent, app):
+    def __init__(self, parent):
         super(Splitter, self).__init__(
             parent, style=wx.SP_LIVE_UPDATE + wx.SP_3D)
         self.Hide()
-        self.app = app
         self.SetBackgroundColour(wx.BLACK)
         self.SetSashGravity(0.5)
         self.SetSize(parent.GetClientSize())
-        self.panel1 = Container(self, self.app)
-        self.panel2 = Container(self, self.app)
+        self.panel1 = Container(self)
+        self.panel2 = Container(self)
         self.panel1.Bind(wx.EVT_WINDOW_DESTROY, self.OnChildDestoyed)
         self.panel2.Bind(wx.EVT_WINDOW_DESTROY, self.OnChildDestoyed)
         # To prevent the splitter from unsplit on doubleclick
@@ -230,10 +218,9 @@ class Splitter(wx.SplitterWindow):
 
 class Container(wx.Window):
 
-    def __init__(self, parent, app, size=(100, 100)):
+    def __init__(self, parent, size=(100, 100)):
         super(Container, self).__init__(parent, size=size, pos=(10000, 10000))
         self.active_terminal = None
-        self.app = app
         self.custom_name = ""
         self.SetBackgroundColour(wx.BLACK)
         self.Bind(wx.EVT_SIZE, self.OnSize)
@@ -251,10 +238,9 @@ class Container(wx.Window):
 
 class TabControl(aui.AuiNotebook):
 
-    def __init__(self, parent, app):
+    def __init__(self, parent):
         super(TabControl, self).__init__(parent, agwStyle=aui.AUI_NB_TAB_MOVE
                                          | aui.AUI_NB_MIDDLE_CLICK_CLOSE)
-        self.app = app
         self.SetBackgroundColour(wx.BLACK)
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnPageChanged)
         self.Bind(aui.EVT_AUINOTEBOOK_END_LABEL_EDIT, self.OnLabelEdited)
@@ -289,73 +275,63 @@ class TabControl(aui.AuiNotebook):
     def OnPageChanged(self, event):
         self.GetCurrentPage().OnSize(force=True)
 
-        if (not self.app.dock_from and
-           self.GetCurrentPage().active_terminal and
-           not self.app.find_dialog.IsShown()):
-            self.app.focus_terminal(self.GetCurrentPage().active_terminal)
+        if (not app.dock_from and self.GetCurrentPage().active_terminal and
+                not app.find_dialog.IsShown()):
+            app.focus_terminal(self.GetCurrentPage().active_terminal)
 
     def OnLabelEdited(self, event):
         if self.GetPageText(event.GetSelection()) == event.GetLabel():
             return
 
         self.GetPage(event.GetSelection()).custom_name = event.GetLabel()
-        wx.CallAfter(self.app.update_title,
-                     self.GetCurrentPage().active_terminal.terminal_hwnd)
-        wx.CallAfter(self.app.focus_terminal,
-                     self.GetCurrentPage().active_terminal)
+        wx.CallAfter(app.update_title, self.GetCurrentPage().active_terminal.terminal_hwnd)
+        wx.CallAfter(app.focus_terminal, self.GetCurrentPage().active_terminal)
 
     def OnTabBeginDrag(self, event):
-        self.app.InitiateDragDrop(self.GetCurrentPage())
+        app.InitiateDragDrop(self.GetCurrentPage())
 
     def OnTabEndDrag(self, event):
-        self.app.dock_from = None
-        self.app.dock_hint.Hide()
+        app.dock_from = None
+        app.dock_hint.Hide()
 
 
 class TerminalWindow(wx.Frame):
 
-    def __init__(self, app):
+    def __init__(self):
         super(TerminalWindow, self).__init__(
             None, -1, PROGRAM_TITLE, size=(800, 600))
         self.SetBackgroundColour(wx.BLACK)
-        self.app = app
-        self.tabs = TabControl(self, self.app)
+        self.tabs = TabControl(self)
         self.Show(True)
 
-        self.app.hwnd_to_terminal_window[self.GetHandle()] = self
+        app.hwnd_to_terminal_window[self.GetHandle()] = self
         self.Bind(wx.EVT_CLOSE, self.OnClose)
 
     def OnClose(self, event):
-        del self.app.hwnd_to_terminal_window[self.GetHandle()]
+        del app.hwnd_to_terminal_window[self.GetHandle()]
 
-        if len(self.app.hwnd_to_terminal_window) == 0:
-            win32api.PostMessage(
-                get_hwnd_for_pid(self.app.cached_terminal.pid),
-                win32con.WM_QUIT)
-            user32.UnhookWindowsHookEx(self.app.keyboard_hook)
-            user32.UnhookWindowsHookEx(self.app.mouse_hook)
-            user32.UnhookWinEvent(self.app.terminal_event_hook)
-            self.app.dock_hint.Destroy()
-            self.app.find_dialog.Destroy()
+        if len(app.hwnd_to_terminal_window) == 0:
+            win32api.PostMessage(get_hwnd_for_pid(app.cached_terminal.pid), win32con.WM_QUIT)
+            user32.UnhookWindowsHookEx(app.keyboard_hook)
+            user32.UnhookWindowsHookEx(app.mouse_hook)
+            user32.UnhookWinEvent(app.terminal_event_hook)
+            app.dock_hint.Destroy()
+            app.find_dialog.Destroy()
 
         event.Skip()
 
 
 class FindDialog(wx.Frame):
 
-    def __init__(self, app):
-        super(FindDialog, self).__init__(
-            None, -1, PROGRAM_TITLE, size=(400, 200),
-            style=wx.STAY_ON_TOP | wx.FRAME_NO_TASKBAR)
-        self.app = app
+    def __init__(self):
+        super(FindDialog, self).__init__(None, -1, PROGRAM_TITLE, size=(400, 200),
+                                         style=wx.STAY_ON_TOP | wx.FRAME_NO_TASKBAR)
         self.SetTransparent(200)
-        self.text = wx.TextCtrl(
-            self, size=(398, 20), style=wx.TE_PROCESS_ENTER)
+        self.text = wx.TextCtrl(self, size=(398, 20), style=wx.TE_PROCESS_ENTER)
         self.text.SetBackgroundColour(wx.Colour(50, 50, 50))
         self.text.SetForegroundColour(wx.WHITE)
         self.list = ultimatelistctrl.UltimateListCtrl(
-            self, wx.ID_ANY,
-            agwStyle=wx.LC_REPORT | wx.LC_NO_HEADER | wx.LC_SINGLE_SEL,
+            self, wx.ID_ANY, agwStyle=wx.LC_REPORT | wx.LC_NO_HEADER | wx.LC_SINGLE_SEL,
             pos=(0, 20), size=(600, 180))
         self.list.InsertColumn(0, "")
         self.list.InsertColumn(1, "")
@@ -377,10 +353,9 @@ class FindDialog(wx.Frame):
         text = self.text.GetValue().upper()
         self.list.DeleteAllItems()
 
-        for terminal in self.app.hwnd_to_terminal.values():
+        for terminal in app.hwnd_to_terminal.values():
             tab_title = terminal.GetParentTab().custom_name
-            if (terminal.title.upper().find(text) != -1 or
-                    tab_title.upper().find(text) != -1):
+            if terminal.title.upper().find(text) != -1 or tab_title.upper().find(text) != -1:
                 item = self.list.InsertStringItem(sys.maxint, terminal.title)
                 self.list.SetStringItem(item, 1, tab_title)
                 self.list.SetItemData(item, terminal)
@@ -394,7 +369,7 @@ class FindDialog(wx.Frame):
         tab = terminal.GetParentTab()
 
         tab.GetParent().SetSelection(tab.GetParent().GetPageIndex(tab))
-        self.app.focus_terminal(terminal, False)
+        app.focus_terminal(terminal, False)
 
         wx.CallAfter(self.text.SetFocus)
 
@@ -402,11 +377,9 @@ class FindDialog(wx.Frame):
         keycode = event.GetKeyCode()
 
         if keycode == wx.WXK_UP:
-            self.list.Select(
-                (self.list.GetFirstSelected() - 1) % self.list.GetItemCount())
+            self.list.Select((self.list.GetFirstSelected() - 1) % self.list.GetItemCount())
         elif keycode == wx.WXK_DOWN:
-            self.list.Select((self.list.GetFirstSelected() + 1) %
-                             self.list.GetItemCount())
+            self.list.Select((self.list.GetFirstSelected() + 1) % self.list.GetItemCount())
         elif keycode == wx.WXK_ESCAPE:
             self.Hide()
         else:
@@ -417,22 +390,20 @@ class FindDialog(wx.Frame):
 
 
 class EventThread(threading.Thread):
-    def __init__(self, app):
+    def __init__(self):
         super(EventThread, self).__init__()
-        self.app = app
         self.daemon = True
 
     def run(self):
         while 1:
-            if win32event.WaitForSingleObject(
-                    self.app.new_window_event,
-                    win32event.INFINITE) == win32event.WAIT_OBJECT_0:
-                wx.CallAfter(self.app.spawn_window)
+            if (win32event.WaitForSingleObject(app.new_window_event, win32event.INFINITE) ==
+                    win32event.WAIT_OBJECT_0):
+                wx.CallAfter(app.spawn_window)
+
 
 class MoveWindowThread(threading.Thread):
-    def __init__(self, app):
+    def __init__(self):
         super(MoveWindowThread, self).__init__()
-        self.app = app
         self.daemon = True
         self.request_queue = Queue.Queue()
 
@@ -446,16 +417,15 @@ class MoveWindowThread(threading.Thread):
             for terminal in terminals.iterkeys():
                 size = terminal.GetSize()
                 # Minimum size of 150x150, really small sizes messes up the terminal
-                win32gui.MoveWindow(terminal.terminal_hwnd, 0, 20, max(
-                    size[0], 150), max(size[1] - 20, 150), True)
+                win32gui.MoveWindow(terminal.terminal_hwnd, 0, 20,
+                                    max(size[0], 150), max(size[1] - 20, 150), True)
 
             time.sleep(0.05)
 
 
-
 class SvanTerm(wx.App):
 
-    def OnInit(self):
+    def Init(self):
         self.new_window_event = win32event.CreateEvent(
             None, 0, 0, "SvanTerm_new_window")
         if win32api.GetLastError() == winerror.ERROR_ALREADY_EXISTS:
@@ -464,11 +434,11 @@ class SvanTerm(wx.App):
             return False
 
         self.spawn_terminal()
-        self.event_tread = EventThread(self)
+        self.event_tread = EventThread()
         self.event_tread.start()
-        self.move_window_thread = MoveWindowThread(self)
+        self.move_window_thread = MoveWindowThread()
         self.move_window_thread.start()
-        self.find_dialog = FindDialog(self)
+        self.find_dialog = FindDialog()
 
         self.hwnd_to_terminal_window = {}
         self.hwnd_to_terminal = {}
@@ -477,9 +447,8 @@ class SvanTerm(wx.App):
         self.clicked_terminal = None
         self.spawn_window()
 
-        self.terminal_event_cfunc = CFUNCTYPE(c_voidp, c_int, c_int, c_int,
-                                              c_int, c_int, c_int,
-                                              c_int)(self.OnTerminalEvent)
+        self.terminal_event_cfunc = CFUNCTYPE(c_voidp, c_int, c_int, c_int, c_int,
+                                              c_int, c_int, c_int)(self.OnTerminalEvent)
 
         self.terminal_event_hook = windll.user32.SetWinEventHook(
             win32con.EVENT_SYSTEM_FOREGROUND, win32con.EVENT_OBJECT_NAMECHANGE,
@@ -503,8 +472,7 @@ class SvanTerm(wx.App):
         return True
 
     def spawn_terminal(self):
-        self.cached_terminal = subprocess.Popen(
-            [r'c:\cygwin64\bin\mintty.exe', "-whide", "-"])
+        self.cached_terminal = subprocess.Popen([r'c:\cygwin64\bin\mintty.exe', "-whide", "-"])
 
     def Keyboard_Event(self, nCode, wParam, lParam):
         lst = cast(lParam, POINTER(c_int))
@@ -516,10 +484,9 @@ class SvanTerm(wx.App):
             try:
                 hwnd = win32gui.GetForegroundWindow()
                 if ((keycode >= ord("A") and keycode <= ord("Z") or
-                    (keycode >= win32con.VK_F1 and keycode <= win32con.VK_F12))
+                     keycode >= win32con.VK_F1 and keycode <= win32con.VK_F12)
                         and hwnd in self.hwnd_to_terminal_window):
-                    self.process_hotkey(
-                        keycode, self.hwnd_to_terminal_window[hwnd])
+                    self.process_hotkey(keycode, self.hwnd_to_terminal_window[hwnd])
                     return -1
 
             except wx._core.PyDeadObjectError:
@@ -565,9 +532,7 @@ class SvanTerm(wx.App):
                 self.clicked_terminal = win
                 self.focus_terminal(win, False)
 
-            if not isinstance(win,
-                              (ultimatelistctrl.UltimateListMainWindow,
-                               wx.TextCtrl)):
+            if not isinstance(win, (ultimatelistctrl.UltimateListMainWindow, wx.TextCtrl)):
                 self.find_dialog.Hide()
 
         if self.dock_from:
@@ -586,16 +551,14 @@ class SvanTerm(wx.App):
                             isinstance(self.dock_from, Terminal)):
                         self.dock_to.GetParent().ActivateTabAtPoint(x, y)
                     elif isinstance(self.dock_to, Terminal):
-                        self.dock_to.ShowDockHint(
-                            self.dock_to.ScreenToClient((x, y)))
+                        self.dock_to.ShowDockHint(self.dock_to.ScreenToClient((x, y)))
                 elif win is None or isinstance(self.dock_from, Container):
                     self.dock_to = DOCK_NEW_WINDOW
                     self.dock_hint.SetRect((x + 1, y + 1, 800, 600))
                 elif isinstance(win, Terminal):
                     win.ShowDockHint(win.ScreenToClient((x, y)))
                 elif isinstance(win, TerminalHeader):
-                    win.GetParent().ShowDockHint(
-                        win.GetParent().ScreenToClient((x, y)))
+                    win.GetParent().ShowDockHint(win.GetParent().ScreenToClient((x, y)))
 
         if wParam == win32con.WM_LBUTTONUP and self.clicked_terminal:
             self.focus_terminal(self.clicked_terminal, True)
@@ -649,22 +612,20 @@ class SvanTerm(wx.App):
                 window.tabs.SetSelection(index)
 
         elif keycode == ord("T"):
-            new_tab = Container(window.tabs, self, window.tabs.GetClientSize())
-            new_terminal = Terminal(new_tab, self)
+            new_tab = Container(window.tabs, window.tabs.GetClientSize())
+            new_terminal = Terminal(new_tab)
             window.tabs.AddTab(new_tab, new_terminal.title.ljust(8, " ")[:20])
             self.focus_terminal(new_terminal)
 
         elif keycode == ord("H") or keycode == ord("V"):
-            new_splitter = Splitter(active_terminal.GetParent(), self)
+            new_splitter = Splitter(active_terminal.GetParent())
 
             if keycode == ord("H"):
-                new_splitter.SplitHorizontally(
-                    new_splitter.panel1, new_splitter.panel2)
+                new_splitter.SplitHorizontally(new_splitter.panel1, new_splitter.panel2)
             else:
-                new_splitter.SplitVertically(
-                    new_splitter.panel1, new_splitter.panel2)
+                new_splitter.SplitVertically(new_splitter.panel1, new_splitter.panel2)
 
-            self.focus_terminal(Terminal(new_splitter.panel2, self))
+            self.focus_terminal(Terminal(new_splitter.panel2))
             new_splitter.Show()
             active_terminal.Reparent(new_splitter.panel1)
             new_splitter.panel1.OnSize()
@@ -677,17 +638,16 @@ class SvanTerm(wx.App):
             while isinstance(child.GetGrandParent(), Splitter):
                 splitter = child.GetGrandParent()
 
-                if ((splitter.GetSplitMode() == wx.SPLIT_HORIZONTAL and
-                        keycode in [ord("A"), ord("S")]) or
-                    (splitter.GetSplitMode() == wx.SPLIT_VERTICAL
-                        and keycode in [ord("Z"), ord("X")])):
+                if (splitter.GetSplitMode() == wx.SPLIT_HORIZONTAL
+                    and keycode in [ord("A"), ord("S")]
+                    or splitter.GetSplitMode() == wx.SPLIT_VERTICAL
+                        and keycode in [ord("Z"), ord("X")]):
                     child = splitter
                     continue
 
-                if ((keycode in [ord("Z"), ord("A")]
-                    and child.GetParent() == splitter.panel1)
-                    or (keycode in [ord("X"), ord("S")]
-                        and child.GetParent() == splitter.panel2)):
+                if (keycode in [ord("Z"), ord("A")] and child.GetParent() == splitter.panel1
+                    or keycode in [ord("X"), ord("S")]
+                        and child.GetParent() == splitter.panel2):
                     splitter.SetSashPosition(splitter.GetSashPosition() - 50)
                     break
                 else:
@@ -700,11 +660,9 @@ class SvanTerm(wx.App):
             terminal_index = terminal_list.index(active_terminal)
 
             if keycode == ord("J"):
-                self.focus_terminal(
-                    terminal_list[(terminal_index - 1) % len(terminal_list)])
+                self.focus_terminal(terminal_list[(terminal_index - 1) % len(terminal_list)])
             else:
-                self.focus_terminal(
-                    terminal_list[(terminal_index + 1) % len(terminal_list)])
+                self.focus_terminal(terminal_list[(terminal_index + 1) % len(terminal_list)])
 
         elif keycode == ord("O") or keycode == ord("P"):
             hwnd_list = self.hwnd_to_terminal_window.keys()
@@ -713,11 +671,9 @@ class SvanTerm(wx.App):
             window_index = hwnd_list.index(window.GetHandle())
 
             if keycode == ord("O"):
-                win32gui.SetFocus(
-                    hwnd_list[(window_index - 1) % len(hwnd_list)])
+                win32gui.SetFocus(hwnd_list[(window_index - 1) % len(hwnd_list)])
             else:
-                win32gui.SetFocus(
-                    hwnd_list[(window_index + 1) % len(hwnd_list)])
+                win32gui.SetFocus(hwnd_list[(window_index + 1) % len(hwnd_list)])
 
         elif keycode == ord("W"):
             window.tabs.GetCurrentPage().Hide()
@@ -743,17 +699,15 @@ class SvanTerm(wx.App):
             win_size = window.GetSize()
             find_size = self.find_dialog.GetSize()
 
-            self.find_dialog.SetPosition(
-                (pos[0] + ((win_size[0] - find_size[0]) / 2),
-                 pos[1] + ((win_size[1] - find_size[1]) / 2)))
+            self.find_dialog.SetPosition((pos[0] + ((win_size[0] - find_size[0]) / 2),
+                                          pos[1] + ((win_size[1] - find_size[1]) / 2)))
             self.find_dialog.Show()
 
     def spawn_window(self):
-        new_window = TerminalWindow(self)
-        new_tab = Container(new_window.tabs, self)
-        new_tab.active_terminal = Terminal(new_tab, self)
-        new_window.tabs.AddTab(
-            new_tab, new_tab.active_terminal.title.ljust(8, " ")[:20])
+        new_window = TerminalWindow()
+        new_tab = Container(new_window.tabs)
+        new_tab.active_terminal = Terminal(new_tab)
+        new_window.tabs.AddTab(new_tab, new_tab.active_terminal.title.ljust(8, " ")[:20])
         self.update_title(new_tab.active_terminal.terminal_hwnd)
 
     def build_terminal_list(self, root):
@@ -778,12 +732,10 @@ class SvanTerm(wx.App):
             if eventType == win32con.EVENT_OBJECT_NAMECHANGE:
                 self.update_title(hwnd)
 
-        if (eventType == win32con.EVENT_SYSTEM_FOREGROUND and
-                not self.find_dialog.IsShown()):
+        if eventType == win32con.EVENT_SYSTEM_FOREGROUND and not self.find_dialog.IsShown():
             try:
                 if (not hwnd in self.hwnd_to_terminal and
-                        not hwnd in self.hwnd_to_terminal_window and
-                        not self.dock_from):
+                        not hwnd in self.hwnd_to_terminal_window and not self.dock_from):
                     self.unfocus_terminal(self.last_active_terminal)
 
                 if hwnd in self.hwnd_to_terminal_window:
@@ -845,10 +797,9 @@ class SvanTerm(wx.App):
             tabs = self.dock_from.GetParent()
             tabs.RemoveTab(self.dock_from)
             if self.dock_to == DOCK_NEW_WINDOW:
-                window = TerminalWindow(self)
+                window = TerminalWindow()
                 window.SetPosition(wx.GetMousePosition())
-                window.tabs.AddTab(
-                    self.dock_from, self.dock_from.active_terminal.title)
+                window.tabs.AddTab(self.dock_from, self.dock_from.active_terminal.title)
             else:
                 self.dock_to.GetParent().AddTab(
                     self.dock_from, self.dock_from.active_terminal.title)
@@ -870,28 +821,25 @@ class SvanTerm(wx.App):
             self.dock_from.GetParent().Hide()
             wx.CallAfter(self.dock_from.GetParent().Destroy)
 
-            if (self.dock_to == DOCK_NEW_WINDOW or
-                    isinstance(self.dock_to, aui.auibook.AuiTabCtrl)):
+            if self.dock_to == DOCK_NEW_WINDOW or isinstance(self.dock_to, aui.auibook.AuiTabCtrl):
                 if self.dock_to == DOCK_NEW_WINDOW:
-                    window = TerminalWindow(self)
+                    window = TerminalWindow()
                     window.SetPosition(wx.GetMousePosition())
                 else:
                     window = self.dock_to.GetGrandParent()
 
-                new_tab = Container(window.tabs, self)
+                new_tab = Container(window.tabs)
                 new_tab.active_terminal = self.dock_from
                 self.dock_from.Reparent(new_tab)
                 window.tabs.AddTab(new_tab, self.dock_from.title)
                 new_tab.OnSize()
             else:
-                new_splitter = Splitter(self.dock_to.GetParent(), self)
+                new_splitter = Splitter(self.dock_to.GetParent())
 
                 if self.dock_pos == DOCK_TOP or self.dock_pos == DOCK_BOTTOM:
-                    new_splitter.SplitHorizontally(
-                        new_splitter.panel1, new_splitter.panel2)
+                    new_splitter.SplitHorizontally(new_splitter.panel1, new_splitter.panel2)
                 else:
-                    new_splitter.SplitVertically(
-                        new_splitter.panel1, new_splitter.panel2)
+                    new_splitter.SplitVertically(new_splitter.panel1, new_splitter.panel2)
 
                 if self.dock_pos == DOCK_TOP or self.dock_pos == DOCK_LEFT:
                     self.dock_to.Reparent(new_splitter.panel2)
@@ -909,4 +857,5 @@ class SvanTerm(wx.App):
         self.dock_from = None
 
 app = SvanTerm(0)
+app.Init()
 app.MainLoop()
