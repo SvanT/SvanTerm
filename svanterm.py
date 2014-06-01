@@ -14,10 +14,8 @@ from ctypes import *
 import pywintypes
 import Queue
 import subprocess
-import sys
 import threading
 import time
-import traceback
 import win32api
 import win32con
 import win32event
@@ -356,7 +354,7 @@ class FindDialog(wx.Frame):
         for terminal in app.hwnd_to_terminal.values():
             tab_title = terminal.GetParentTab().custom_name
             if terminal.title.upper().find(text) != -1 or tab_title.upper().find(text) != -1:
-                item = self.list.InsertStringItem(sys.maxint, terminal.title)
+                item = self.list.InsertStringItem(2**30, terminal.title)
                 self.list.SetStringItem(item, 1, tab_title)
                 self.list.SetItemData(item, terminal)
 
@@ -590,8 +588,7 @@ class SvanTerm(wx.App):
         self.update_title(terminal.terminal_hwnd)
 
     def set_focus(self, terminal, verify_foreground_window=None):
-        if (verify_foreground_window and not
-                win32gui.GetForegroundWindow() == verify_foreground_window):
+        if verify_foreground_window and win32gui.GetForegroundWindow() != verify_foreground_window:
             return
 
         try:
