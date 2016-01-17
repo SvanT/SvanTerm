@@ -1,7 +1,7 @@
 # Todos:
 # - Integrate tag dragging between windows with normal dragging in tabcontrol
 # - Broadcast to terminals
-# - Ctrl + Shift + number to select terminal (with hints)
+# - Ctrl + Shift + arrow to walk through terminals in current tab? or 1-9 with hints
 # - Split into files
 # - Comment the code :)
 # - Detect missing cygwin on start (seems to die silently now)
@@ -9,6 +9,8 @@
 # - Might use a smarter way to get hwnd of new mintty, for example using a unique window class, this might remove the dependency of win32process
 # - Move windows to front in the Z-axis while docking
 # - Look into doing movewindow/setwindowpos completely async
+# - Add tip, ctrl-enter seems to be cisco escape sequence (terminal break?)
+# - Config file with keyboard shortcuts
 
 import pywintypes
 import Queue
@@ -69,7 +71,6 @@ class TerminalHeader(wx.StaticText):
 
 
 class Terminal(wx.Window):
-
     def __init__(self, parent):
         super(Terminal, self).__init__(parent)
         self.SetBackgroundColour(wx.BLACK)
@@ -157,8 +158,7 @@ class Terminal(wx.Window):
 class Splitter(wx.SplitterWindow):
 
     def __init__(self, parent):
-        super(Splitter, self).__init__(
-            parent, style=wx.SP_LIVE_UPDATE + wx.SP_3D)
+        super(Splitter, self).__init__(parent, style=wx.SP_LIVE_UPDATE + wx.SP_3D)
         self.Hide()
         self.SetBackgroundColour(wx.BLACK)
         self.SetSashGravity(0.5)
@@ -273,8 +273,7 @@ class TabControl(aui.AuiNotebook):
 class TerminalWindow(wx.Frame):
 
     def __init__(self):
-        super(TerminalWindow, self).__init__(
-            None, -1, PROGRAM_TITLE, size=(800, 600))
+        super(TerminalWindow, self).__init__(None, -1, PROGRAM_TITLE, size=(800, 600))
         self.SetBackgroundColour(wx.BLACK)
         self.tabs = TabControl(self)
         self.Show(True)
@@ -383,13 +382,15 @@ class MoveWindowThread(threading.Thread):
         self.request_queue = Queue.Queue()
 
     def run(self):
-        while 1:
-            terminals = {}
-            terminals[self.request_queue.get(True)] = True
-            for i in xrange(self.request_queue.qsize()):
-                terminals[self.request_queue.get()] = True
+        while True:
+            terminals = set([self.request_queue.get(True)])
+            while True:
+                try:
+                    terminals.add(self.request_queue.get(False))
+                except Queue.Empty:
+                    break
 
-            for terminal in terminals.iterkeys():
+            for terminal in terminals:
                 size = terminal.GetSize()
                 # Minimum size of 150x150, really small sizes messes up the terminal
                 win32gui.MoveWindow(terminal.terminal_hwnd, 0, 20,
@@ -401,8 +402,7 @@ class MoveWindowThread(threading.Thread):
 class SvanTerm(wx.App):
 
     def Init(self):
-        self.new_window_event = win32event.CreateEvent(
-            None, 0, 0, "SvanTerm_new_window")
+        self.new_window_event = win32event.CreateEvent(None, 0, 0, "SvanTerm_new_window")
         if win32api.GetLastError() == winerror.ERROR_ALREADY_EXISTS:
             # An instance already exists, send an open new window event instead
             win32event.SetEvent(self.new_window_event)
@@ -446,11 +446,10 @@ class SvanTerm(wx.App):
         return True
 
     def spawn_terminal(self):
-        self.cached_terminal = subprocess.Popen([r'c:\cygwin64\bin\mintty.exe', "-whide", "-"])
+        self.cached_terminal = subprocess.Popen([r'c:\cygwin64\bin\mintty.exe', "--option", "WordChars=:/?", "-whide", "-"])
 
     def Keyboard_Event(self, nCode, wParam, lParam):
-        lst = cast(lParam, POINTER(c_int))
-        keycode = lst[0]
+        keycode = cast(lParam, POINTER(c_int))[0]
 
         if (wParam == win32con.WM_KEYDOWN and
            (win32api.GetAsyncKeyState(win32con.VK_LCONTROL) & 0x8000) and
@@ -590,10 +589,10 @@ class SvanTerm(wx.App):
             window.tabs.AddTab(new_tab, new_terminal.title.ljust(8, " ")[:20])
             self.focus_terminal(new_terminal)
 
-        elif keycode == ord("H") or keycode == ord("V"):
+        elif keycode == ord("E") or keycode == ord("R"):
             new_splitter = Splitter(active_terminal.GetParent())
 
-            if keycode == ord("H"):
+            if keycode == ord("R"):
                 new_splitter.SplitHorizontally(new_splitter.panel1, new_splitter.panel2)
             else:
                 new_splitter.SplitVertically(new_splitter.panel1, new_splitter.panel2)
@@ -603,7 +602,7 @@ class SvanTerm(wx.App):
             active_terminal.Reparent(new_splitter.panel1)
             new_splitter.panel1.OnSize()
 
-        elif keycode == ord("C"):
+        elif keycode == ord("D"):
             active_terminal.Destroy()
 
         elif keycode in [ord("Z"), ord("X"), ord("A"), ord("S")]:
@@ -832,7 +831,7 @@ class SvanTerm(wx.App):
                 hwnds.append(hwnd)
             return True
 
-        while 1:
+        while True:
             hwnds = []
             win32gui.EnumWindows(callback, hwnds)
             for hwnd in hwnds:
