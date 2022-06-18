@@ -36,6 +36,7 @@ DOCK_LEFT = 2
 DOCK_RIGHT = 3
 DOCK_BOTTOM = 4
 DOCK_NEW_WINDOW = 5
+DPI_SCALING_FACTOR = 1.75  # TODO: Get this from win32api
 
 
 class TerminalHeader(wx.StaticText):
@@ -519,6 +520,7 @@ class SvanTerm(wx.App):
                 "C:\\Users\\svant\\AppData\\Local\\wsltty\\bin\\mintty.exe",
                 "--class=" + self.cached_terminal_class_name,
                 "--WSL=",
+                "-whide",
                 "-~",
                 "-",
             ],
@@ -567,8 +569,9 @@ class SvanTerm(wx.App):
             return windll.user32.CallNextHookEx(0, nCode, wParam, lParam)
 
         lst = cast(lParam, POINTER(c_int))
-        x = lst[0]
-        y = lst[1]
+
+        x = int(lst[0] / DPI_SCALING_FACTOR)
+        y = int(lst[1] / DPI_SCALING_FACTOR)
 
         win = wx.FindWindowAtPoint((x, y))
 
@@ -621,8 +624,9 @@ class SvanTerm(wx.App):
         return windll.user32.CallNextHookEx(0, nCode, wParam, lParam)
 
     def unfocus_terminal(self, terminal):
-        terminal.text.enabled = False
-        terminal.text.Refresh()
+        if terminal:
+            terminal.text.enabled = False
+            terminal.text.Refresh()
 
     def focus_terminal(self, terminal, set_focus=True, verify_foreground_window=None):
         if terminal != self.last_active_terminal:
