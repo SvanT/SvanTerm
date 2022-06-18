@@ -120,27 +120,43 @@ class Terminal(wx.Window):
         if abs(from_center[0]) > abs(from_center[1]):
             if from_center[0] <= 0:
                 app.dock_hint.SetRect(
-                    wx.Rect(terminal_pos[0], terminal_pos[1], center[0], size[1])
+                    wx.Rect(
+                        int(terminal_pos[0]),
+                        int(terminal_pos[1]),
+                        int(center[0]),
+                        int(size[1]),
+                    )
                 )
                 app.dock_pos = DOCK_LEFT
             else:
                 app.dock_pos = DOCK_RIGHT
                 app.dock_hint.SetRect(
                     wx.Rect(
-                        terminal_pos[0] + center[0], terminal_pos[1], center[0], size[1]
+                        int(terminal_pos[0] + center[0]),
+                        int(terminal_pos[1]),
+                        int(center[0]),
+                        int(size[1]),
                     )
                 )
         else:
             if from_center[1] <= 0:
                 app.dock_pos = DOCK_TOP
                 app.dock_hint.SetRect(
-                    wx.Rect(terminal_pos[0], terminal_pos[1], size[0], center[1])
+                    wx.Rect(
+                        int(terminal_pos[0]),
+                        int(terminal_pos[1]),
+                        int(size[0]),
+                        int(center[1]),
+                    )
                 )
             else:
                 app.dock_pos = DOCK_BOTTOM
                 app.dock_hint.SetRect(
                     wx.Rect(
-                        terminal_pos[0], terminal_pos[1] + center[1], size[0], center[1]
+                        int(terminal_pos[0]),
+                        int(terminal_pos[1] + center[1]),
+                        int(size[0]),
+                        int(center[1]),
                     )
                 )
 
