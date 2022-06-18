@@ -12,6 +12,11 @@
 # - Add tip, ctrl-enter seems to be cisco escape sequence (terminal break?)
 # - Config file with keyboard shortcuts
 
+import ctypes
+
+errorCode = ctypes.windll.shcore.SetProcessDpiAwareness(2)
+
+
 import pywintypes
 import queue
 import random
@@ -36,7 +41,6 @@ DOCK_LEFT = 2
 DOCK_RIGHT = 3
 DOCK_BOTTOM = 4
 DOCK_NEW_WINDOW = 5
-DPI_SCALING_FACTOR = 1.75  # TODO: Get this from win32api
 
 
 class TerminalHeader(wx.StaticText):
@@ -579,8 +583,8 @@ class SvanTerm(wx.App):
 
         lst = cast(lParam, POINTER(c_int))
 
-        x = int(lst[0] / DPI_SCALING_FACTOR)
-        y = int(lst[1] / DPI_SCALING_FACTOR)
+        x = lst[0]
+        y = lst[1]
 
         win = wx.FindWindowAtPoint((x, y))
 
