@@ -88,7 +88,7 @@ class Terminal(wx.Window):
         super(Terminal, self).__init__(parent)
         self.SetBackgroundColour(wx.BLACK)
 
-        self.terminal_hwnd = app.get_hwnd_for_class_name(app.cached_terminal_class_name)
+        self.terminal_hwnd = app.spawn_terminal()
         app.hwnd_to_terminal[self.terminal_hwnd] = self
 
         self.title = win32gui.GetWindowText(self.terminal_hwnd)
@@ -106,7 +106,6 @@ class Terminal(wx.Window):
         win32gui.SetParent(self.terminal_hwnd, self.GetHandle())
         self.GetParent().OnSize()
         win32gui.ShowWindow(self.terminal_hwnd, win32con.SW_SHOW)
-        app.spawn_terminal()
 
     def ShowDockHint(self, mouse_pos):
         size = self.GetClientSize()
@@ -311,10 +310,6 @@ class TerminalWindow(wx.Frame):
         del app.hwnd_to_terminal_window[self.GetHandle()]
 
         if len(app.hwnd_to_terminal_window) == 0:
-            win32api.PostMessage(
-                app.get_hwnd_for_class_name(app.cached_terminal_class_name),
-                win32con.WM_QUIT,
-            )
             windll.user32.UnhookWindowsHookEx(app.keyboard_hook)
             windll.user32.UnhookWindowsHookEx(app.mouse_hook)
             windll.user32.UnhookWinEvent(app.terminal_event_hook)
@@ -463,7 +458,6 @@ class SvanTerm(wx.App):
             win32event.SetEvent(self.new_window_event)
             return False
 
-        self.spawn_terminal()
         EventThread().start()
         self.move_window_thread = MoveWindowThread()
         self.move_window_thread.start()
@@ -512,19 +506,34 @@ class SvanTerm(wx.App):
         return True
 
     def spawn_terminal(self):
-        self.cached_terminal_class_name = "".join(
+        terminal_class_name = "".join(
             random.choice(string.ascii_uppercase + string.digits) for _ in range(6)
         )
         subprocess.Popen(
             [
                 "C:\\Users\\svant\\AppData\\Local\\wsltty\\bin\\mintty.exe",
-                "--class=" + self.cached_terminal_class_name,
+                "--class=" + terminal_class_name,
                 "--WSL=",
                 "-whide",
                 "-~",
                 "-",
             ],
         )
+
+        def callback(hwnd, hwnds):
+            this_class_name = win32gui.GetClassName(hwnd)
+            if this_class_name == terminal_class_name:
+                hwnds.append(hwnd)
+
+            return True
+
+        while True:
+            hwnds = []
+            win32gui.EnumWindows(callback, hwnds)
+            if hwnds:
+                return hwnds[0]
+
+            time.sleep(0.01)
 
     def Keyboard_Event(self, nCode, wParam, lParam):
         keycode = cast(lParam, POINTER(c_int))[0]
@@ -950,22 +959,6 @@ class SvanTerm(wx.App):
             wx.CallAfter(self.focus_terminal, self.dock_from)
 
         self.dock_from = None
-
-    def get_hwnd_for_class_name(self, class_name):
-        def callback(hwnd, hwnds):
-            this_class_name = win32gui.GetClassName(hwnd)
-            if this_class_name == class_name:
-                hwnds.append(hwnd)
-
-            return True
-
-        while True:
-            hwnds = []
-            win32gui.EnumWindows(callback, hwnds)
-            if hwnds:
-                return hwnds[0]
-
-            time.sleep(0.01)
 
 
 app = SvanTerm(0)
