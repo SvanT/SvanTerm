@@ -163,7 +163,6 @@ class Terminal(wx.Window):
 
     def Destroy(self, event=None):
         terminal_list = app.build_terminal_list(self.GetParentTab())
-        terminal_index = terminal_list.index(self)
 
         if len(terminal_list) > 1:
             if self.GetGrandParent().panel1 == self.GetParent():
@@ -220,8 +219,7 @@ class Splitter(wx.SplitterWindow):
 
         for child in remaining_panel.GetChildren():
             child.Reparent(self.GetParent())
-
-        child.SetSize(self.GetParent().GetClientSize())
+            child.SetSize(self.GetParent().GetClientSize())
 
         # Schedule a destroy, can't run this directly from this event as this will crash python
         self.Hide()
@@ -490,7 +488,7 @@ class SvanTerm(wx.App):
         self.spawn_window()
 
         self.terminal_event_cfunc = CFUNCTYPE(
-            c_voidp, c_int, c_int, c_int, c_int, c_int, c_int, c_int
+            c_void_p, c_int, c_int, c_int, c_int, c_int, c_int, c_int
         )(self.OnTerminalEvent)
 
         self.terminal_event_hook = windll.user32.SetWinEventHook(
@@ -753,7 +751,7 @@ class SvanTerm(wx.App):
                 self.focus_terminal(nearest_terminal)
 
         elif ctrl and shift and (keycode == ord("O") or keycode == ord("P")):
-            hwnd_list = self.hwnd_to_terminal_window.keys()
+            hwnd_list = list(self.hwnd_to_terminal_window.keys())
             if len(hwnd_list) == 1:
                 return
             window_index = hwnd_list.index(window.GetHandle())
@@ -796,16 +794,11 @@ class SvanTerm(wx.App):
             self.find_dialog.Show()
 
         elif alt and keycode == ord("M"):
-            if not self.maximized_terminal:
-                self.maximized_terminal = active_terminal
-                self.maximized_terminal_original_parent = active_terminal.GetParent()
-                self.maximized_container = Container(window)
-                window.tabs.Hide()
-                window.tabs.Reparent(None)
-                active_terminal.Reparent(self.maximized_container)
-                window.Layout()
-                self.maximized_container.OnSize()
-            else:
+            if (
+                self.maximized_terminal
+                and self.maximized_container
+                and self.maximized_terminal_original_parent
+            ):
                 window.tabs.Reparent(window)
                 window.tabs.Show()
                 self.maximized_terminal.Reparent(
@@ -816,6 +809,15 @@ class SvanTerm(wx.App):
                 self.maximized_container = None
                 self.maximized_terminal = None
                 self.maximized_terminal_original_parent = None
+            else:
+                self.maximized_terminal = active_terminal
+                self.maximized_terminal_original_parent = active_terminal.GetParent()
+                self.maximized_container = Container(window)
+                window.tabs.Hide()
+                window.tabs.Reparent(None)
+                active_terminal.Reparent(self.maximized_container)
+                window.Layout()
+                self.maximized_container.OnSize()
         else:
             return False
 
@@ -837,8 +839,9 @@ class SvanTerm(wx.App):
         threading.Thread(target=focus_window).start()
 
     def build_terminal_list(self, root):
+        terminal_list = []
         if not len(root.GetChildren()):
-            return []
+            return terminal_list
 
         child = root.GetChildren()[0]
 
@@ -927,7 +930,7 @@ class SvanTerm(wx.App):
     def FinishDragDrop(self):
         wx.CallAfter(self.dock_hint.Hide)
 
-        if self.dock_from == self.dock_to:
+        if self.dock_from == self.dock_to or not self.dock_from:
             self.dock_from = None
             return
 
@@ -952,7 +955,6 @@ class SvanTerm(wx.App):
                 wx.CallAfter(self.focus_terminal, self.dock_from.active_terminal)
         else:
             terminal_list = self.build_terminal_list(self.dock_from_tab)
-            terminal_index = terminal_list.index(self.dock_from)
 
             if len(terminal_list) > 1:
                 if self.dock_from.GetGrandParent().panel1 == self.dock_from.GetParent():
