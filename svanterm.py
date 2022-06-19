@@ -558,13 +558,15 @@ class SvanTerm(wx.App):
     def Keyboard_Event(self, nCode, wParam, lParam):
         keycode = cast(lParam, POINTER(c_int))[0]
 
-        if wParam == win32con.WM_KEYDOWN:
+        if wParam in (win32con.WM_KEYDOWN, win32con.WM_SYSKEYDOWN):
             window = self.hwnd_to_terminal_window.get(win32gui.GetForegroundWindow())
+
             if window and self.process_hotkey(
                 keycode,
                 window,
                 ctrl=win32api.GetAsyncKeyState(win32con.VK_LCONTROL) & 0x8000,
                 shift=win32api.GetAsyncKeyState(win32con.VK_LSHIFT) & 0x8000,
+                alt=win32api.GetAsyncKeyState(win32con.VK_LMENU) & 0x8000,
             ):
                 return True
 
@@ -683,7 +685,7 @@ class SvanTerm(wx.App):
             win32gui.SetParent(terminal.terminal_hwnd, terminal.GetHandle())
             win32gui.SetFocus(terminal.terminal_hwnd)
 
-    def process_hotkey(self, keycode, window, ctrl, shift):
+    def process_hotkey(self, keycode, window, ctrl, shift, alt):
         active_terminal = window.tabs.GetCurrentPage().active_terminal
 
         if keycode >= win32con.VK_F1 and keycode <= win32con.VK_F12:
