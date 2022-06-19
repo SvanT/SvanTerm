@@ -1,6 +1,5 @@
 # Todos:
 # - Integrate tag dragging between windows with normal dragging in tabcontrol
-# - Ctrl + Shift + arrow to walk through terminals in current tab? or 1-9 with hints
 # - Move windows to front in the Z-axis while docking
 # - Look into doing movewindow/setwindowpos completely async
 # - Config file with keyboard shortcuts
