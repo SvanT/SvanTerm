@@ -87,6 +87,11 @@ class Terminal(wx.Window):
         super(Terminal, self).__init__(parent)
         self.SetBackgroundColour(wx.BLACK)
 
+        # For some reason we are losing the focus during terminal creation,
+        # maybe mintty/wslbridge2 does steal is? However check if focus changes right
+        # after creation and in this case set it back to the TerminalWindow
+        foreground_window = win32gui.GetForegroundWindow()
+
         self.terminal_hwnd = app.spawn_terminal()
         app.hwnd_to_terminal[self.terminal_hwnd] = self
 
@@ -105,6 +110,15 @@ class Terminal(wx.Window):
         win32gui.SetParent(self.terminal_hwnd, self.GetHandle())
         self.GetParent().OnSize()
         win32gui.ShowWindow(self.terminal_hwnd, win32con.SW_SHOW)
+
+        def ensure_foreground_window():
+            for _ in range(10):
+                if win32gui.GetForegroundWindow() != foreground_window:
+                    win32gui.SetForegroundWindow(foreground_window)
+
+                time.sleep(0.1)
+
+        threading.Thread(target=ensure_foreground_window).start()
 
     def ShowDockHint(self, mouse_pos):
         size = self.GetClientSize()
@@ -835,13 +849,6 @@ class SvanTerm(wx.App):
         new_window.tabs.AddTab(
             new_tab, new_tab.active_terminal.title.ljust(8, " ")[:20]
         )
-
-        # TODO: Can this be "event driven"
-        def focus_window():
-            time.sleep(0.1)
-            win32gui.SetForegroundWindow(new_window.GetHandle())
-
-        threading.Thread(target=focus_window).start()
 
     def build_terminal_list(self, root):
         terminal_list = []
