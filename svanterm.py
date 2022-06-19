@@ -704,7 +704,7 @@ class SvanTerm(wx.App):
             window.tabs.AddTab(new_tab, new_terminal.title.ljust(8, " ")[:20])
             self.focus_terminal(new_terminal)
 
-        elif ctrl and shift and keycode == ord("E") or keycode == ord("R"):
+        elif ctrl and shift and (keycode == ord("E") or keycode == ord("R")):
             new_splitter = Splitter(active_terminal.GetParent())
 
             if keycode == ord("R"):
@@ -746,7 +746,7 @@ class SvanTerm(wx.App):
                     splitter.SetSashPosition(splitter.GetSashPosition() + 50)
                     break
 
-        elif ctrl and shift and keycode == ord("J") or keycode == ord("K"):
+        elif ctrl and shift and (keycode == ord("J") or keycode == ord("K")):
             terminal_list = self.build_terminal_list(window.tabs.GetCurrentPage())
             terminal_index = terminal_list.index(active_terminal)
 
@@ -759,7 +759,7 @@ class SvanTerm(wx.App):
                     terminal_list[(terminal_index + 1) % len(terminal_list)]
                 )
 
-        elif ctrl and shift and keycode == ord("O") or keycode == ord("P"):
+        elif ctrl and shift and (keycode == ord("O") or keycode == ord("P")):
             hwnd_list = self.hwnd_to_terminal_window.keys()
             if len(hwnd_list) == 1:
                 return
