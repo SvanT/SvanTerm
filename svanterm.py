@@ -1,6 +1,5 @@
 # Todos:
 # - Integrate tag dragging between windows with normal dragging in tabcontrol
-# - Broadcast to terminals
 # - Ctrl + Shift + arrow to walk through terminals in current tab? or 1-9 with hints
 # - Move windows to front in the Z-axis while docking
 # - Look into doing movewindow/setwindowpos completely async
@@ -574,22 +573,6 @@ class SvanTerm(wx.App):
                 alt=win32api.GetAsyncKeyState(win32con.VK_LMENU) & 0x8000,
             ):
                 return True
-
-        # Broadcast to terminals (not yet working)
-        # hwnd = win32gui.GetForegroundWindow()
-        # if hwnd in self.hwnd_to_terminal_window:
-        #     for terminal in self.build_terminal_list(
-        #            self.hwnd_to_terminal_window[hwnd].tabs.GetCurrentPage()):
-        #         # win32gui.SetFocus(terminal.terminal_hwnd)
-        #         # win32api.keybd_event(keycode, 255, 0)
-
-        #         print keycode
-        #         win32api.PostMessage(terminal.terminal_hwnd,
-        #                              wParam, lParam, 0)
-        #         if keycode not in [win32con.VK_LCONTROL, win32con.VK_LSHIFT]:
-        #             win32api.PostMessage(terminal.terminal_hwnd,
-        #                                  win32con.WM_CHAR, keycode, 0)
-        #     return -1
 
         return windll.user32.CallNextHookEx(0, nCode, wParam, lParam)
 
