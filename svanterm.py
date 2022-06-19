@@ -23,6 +23,7 @@ import win32api
 import win32con
 import win32event
 import win32gui
+import win32process
 import winerror
 import wx
 import wx.lib.agw.aui as aui
@@ -103,11 +104,10 @@ class Terminal(wx.Window):
         self.text.Bind(wx.EVT_MIDDLE_DOWN, self.Destroy)
 
         win32gui.SetWindowLong(
-            self.terminal_hwnd,
-            win32con.GWL_STYLE,
-            win32con.WS_CHILD | win32con.WS_VSCROLL,
+            self.terminal_hwnd, win32con.GWL_STYLE, win32con.WS_CHILD
         )
         win32gui.SetParent(self.terminal_hwnd, self.GetHandle())
+
         self.GetParent().OnSize()
         win32gui.ShowWindow(self.terminal_hwnd, win32con.SW_SHOW)
 
@@ -541,34 +541,17 @@ class SvanTerm(wx.App):
         return True
 
     def spawn_terminal(self):
-        terminal_class_name = "".join(
-            random.choice(string.ascii_uppercase + string.digits) for _ in range(6)
-        )
-
-        subprocess.check_call(
+        process = subprocess.Popen(
             [
-                "C:\\Users\\svant\\AppData\\Local\\wsltty\\bin\\mintty.exe",
-                "--class=" + terminal_class_name,
-                "--WSL=Ubuntu",
-                "-whide",
-                "-o",
-                "ZoomFontWithWindow=no",
-                "-o",
-                "KeyFunctions=CS+c:copy;CS+v:paste;CS+f:search",
-                "-o",
-                "Font=Cascadia Code",
-                "-o",
-                "FontHeight=11",
-                "-o",
-                "CopyOnSelect=no",
-                "-~",
-                "-",
-            ],
+                "alacritty.exe",
+                "-e",
+                "ubuntu",
+            ]
         )
 
         def callback(hwnd, hwnds):
-            this_class_name = win32gui.GetClassName(hwnd)
-            if this_class_name == terminal_class_name:
+            _, found_pid = win32process.GetWindowThreadProcessId(hwnd)
+            if found_pid == process.pid:
                 hwnds.append(hwnd)
 
             return True
@@ -576,8 +559,10 @@ class SvanTerm(wx.App):
         while True:
             hwnds = []
             win32gui.EnumWindows(callback, hwnds)
-            if hwnds:
-                return hwnds[0]
+            for hwnd in hwnds:
+                style = win32gui.GetWindowLong(hwnd, win32con.GWL_STYLE)
+                if (style & win32con.WS_VISIBLE) and (style & win32con.WS_CAPTION):
+                    return hwnd
 
             time.sleep(0.01)
 
