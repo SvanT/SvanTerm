@@ -1,15 +1,14 @@
 # Todos:
+# - Provide configdir to mintty
+# - Maximize pane
 # - Integrate tag dragging between windows with normal dragging in tabcontrol
 # - Broadcast to terminals
 # - Ctrl + Shift + arrow to walk through terminals in current tab? or 1-9 with hints
-# - Split into files
-# - Comment the code :)
-# - Detect missing cygwin on start (seems to die silently now)
-# - Add recommended bashrc / some tips and tricks setting up / using cygwin
 # - Move windows to front in the Z-axis while docking
 # - Look into doing movewindow/setwindowpos completely async
-# - Add tip, ctrl-enter seems to be cisco escape sequence (terminal break?)
 # - Config file with keyboard shortcuts
+# - Remove * import for ctypes
+# - Fix typings
 
 import ctypes
 
