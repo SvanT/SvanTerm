@@ -538,6 +538,8 @@ class SvanTerm(wx.App):
                 "--WSL=",
                 "-whide",
                 "--configdir=%s" % os.path.join(os.getenv("APPDATA") or "", "wsltty"),
+                "-o",
+                "ZoomFontWithWindow=no",
                 "-~",
                 "-",
             ],
@@ -720,24 +722,24 @@ class SvanTerm(wx.App):
         elif ctrl and shift and keycode == ord("D"):
             active_terminal.Destroy()
 
-        elif ctrl and shift and keycode in [ord("Z"), ord("X"), ord("A"), ord("S")]:
+        elif alt and shift and keycode in (ord("H"), ord("J"), ord("K"), ord("L")):
             child = active_terminal
             while isinstance(child.GetGrandParent(), Splitter):
                 splitter = child.GetGrandParent()
 
                 if (
                     splitter.GetSplitMode() == wx.SPLIT_HORIZONTAL
-                    and keycode in [ord("A"), ord("S")]
+                    and keycode in [ord("H"), ord("L")]
                     or splitter.GetSplitMode() == wx.SPLIT_VERTICAL
-                    and keycode in [ord("Z"), ord("X")]
+                    and keycode in [ord("J"), ord("K")]
                 ):
                     child = splitter
                     continue
 
                 if (
-                    keycode in [ord("Z"), ord("A")]
+                    keycode in [ord("H"), ord("K")]
                     and child.GetParent() == splitter.panel1
-                    or keycode in [ord("X"), ord("S")]
+                    or keycode in [ord("J"), ord("L")]
                     and child.GetParent() == splitter.panel2
                 ):
                     splitter.SetSashPosition(splitter.GetSashPosition() - 50)
