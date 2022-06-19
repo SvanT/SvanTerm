@@ -1,5 +1,4 @@
 # Todos:
-# - Provide configdir to mintty
 # - Maximize pane
 # - Integrate tag dragging between windows with normal dragging in tabcontrol
 # - Broadcast to terminals
@@ -15,6 +14,7 @@ import ctypes
 errorCode = ctypes.windll.shcore.SetProcessDpiAwareness(2)
 
 
+import os
 import pywintypes
 import queue
 import random
@@ -30,6 +30,7 @@ import winerror
 import wx
 import wx.lib.agw.aui as aui
 import wx.lib.agw.ultimatelistctrl as ultimatelistctrl
+
 from ctypes import *
 
 PROGRAM_TITLE = "SvanTerm 0.2"
@@ -526,12 +527,14 @@ class SvanTerm(wx.App):
         terminal_class_name = "".join(
             random.choice(string.ascii_uppercase + string.digits) for _ in range(6)
         )
+
         subprocess.Popen(
             [
                 "C:\\Users\\svant\\AppData\\Local\\wsltty\\bin\\mintty.exe",
                 "--class=" + terminal_class_name,
                 "--WSL=",
                 "-whide",
+                "--configdir=%s" % os.path.join(os.getenv("APPDATA") or "", "wsltty"),
                 "-~",
                 "-",
             ],
