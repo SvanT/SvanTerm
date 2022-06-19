@@ -551,9 +551,16 @@ class SvanTerm(wx.App):
                 "--class=" + terminal_class_name,
                 "--WSL=",
                 "-whide",
-                "--configdir=%s" % os.path.join(os.getenv("APPDATA") or "", "wsltty"),
                 "-o",
                 "ZoomFontWithWindow=no",
+                "-o",
+                "KeyFunctions=CS+c:copy;CS+v:paste;CS+f:search",
+                "-o",
+                "Font=Cascadia Code",
+                "-o",
+                "FontHeight=11",
+                "-o",
+                "CopyOnSelect=no",
                 "-~",
                 "-",
             ],
@@ -698,14 +705,14 @@ class SvanTerm(wx.App):
             if index < window.tabs.GetPageCount():
                 window.tabs.SetSelection(index)
 
-        elif alt and keycode == ord("T"):
+        elif ctrl and shift and keycode == ord("T"):
             new_tab = Container(window.tabs, window.tabs.GetClientSize())
             new_terminal = Terminal(new_tab)
             window.tabs.AddTab(new_tab, new_terminal.title.ljust(8, " ")[:20])
             self.focus_terminal(new_terminal)
 
             # https://docs.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
-        elif alt and (keycode == 0xBB or keycode == 0xBD):
+        elif ctrl and shift and (keycode == 0xBB or keycode == 0xBD):
             new_splitter = Splitter(active_terminal.GetParent())
 
             if keycode == 0xBD:
@@ -797,7 +804,7 @@ class SvanTerm(wx.App):
         elif ctrl and shift and keycode == ord("N"):
             self.spawn_window()
 
-        elif ctrl and shift and keycode == ord("F"):
+        elif alt and keycode == ord("F"):
             self.find_dialog.text.SetValue("")
             self.find_dialog.Filter()
             pos = window.GetPosition()
