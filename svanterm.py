@@ -829,7 +829,13 @@ class SvanTerm(wx.App):
         new_window.tabs.AddTab(
             new_tab, new_tab.active_terminal.title.ljust(8, " ")[:20]
         )
-        win32gui.SetForegroundWindow(new_window.GetHandle())
+
+        # TODO: Can this be "event driven"
+        def focus_window():
+            time.sleep(0.1)
+            win32gui.SetForegroundWindow(new_window.GetHandle())
+
+        threading.Thread(target=focus_window).start()
 
     def build_terminal_list(self, root):
         if not len(root.GetChildren()):
