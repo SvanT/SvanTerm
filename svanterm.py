@@ -207,7 +207,11 @@ class Splitter(wx.SplitterWindow):
         self.SetMinimumPaneSize(1)
 
     def OnChildDestoyed(self, event):
-        if self.IsBeingDeleted():
+        try:
+            if self.IsBeingDeleted():
+                return
+
+        except RuntimeError:
             return
 
         if event.GetWindow() == self.panel1:
