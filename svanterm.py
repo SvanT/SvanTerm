@@ -6,7 +6,6 @@
 # - Comment the code :)
 # - Detect missing cygwin on start (seems to die silently now)
 # - Add recommended bashrc / some tips and tricks setting up / using cygwin
-# - Might use a smarter way to get hwnd of new mintty, for example using a unique window class, this might remove the dependency of win32process
 # - Move windows to front in the Z-axis while docking
 # - Look into doing movewindow/setwindowpos completely async
 # - Add tip, ctrl-enter seems to be cisco escape sequence (terminal break?)
@@ -28,7 +27,6 @@ import win32api
 import win32con
 import win32event
 import win32gui
-import win32process
 import winerror
 import wx
 import wx.lib.agw.aui as aui
