@@ -11,11 +11,8 @@ import ctypes
 errorCode = ctypes.windll.shcore.SetProcessDpiAwareness(2)
 
 
-import os
 import pywintypes
 import queue
-import random
-import string
 import subprocess
 import threading
 import time
