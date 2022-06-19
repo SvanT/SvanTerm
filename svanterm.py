@@ -746,18 +746,32 @@ class SvanTerm(wx.App):
                     splitter.SetSashPosition(splitter.GetSashPosition() + 50)
                     break
 
-        elif ctrl and shift and (keycode == ord("J") or keycode == ord("K")):
-            terminal_list = self.build_terminal_list(window.tabs.GetCurrentPage())
-            terminal_index = terminal_list.index(active_terminal)
+        elif alt and keycode in (ord("H"), ord("J"), ord("K"), ord("L")):
+            current_pos = active_terminal.GetScreenPosition()
+            terminals = self.build_terminal_list(window.tabs.GetCurrentPage())
+            nearest_distance = None
+            nearest_terminal = None
+            for terminal in terminals:
+                if terminal == active_terminal:
+                    continue
 
-            if keycode == ord("J"):
-                self.focus_terminal(
-                    terminal_list[(terminal_index - 1) % len(terminal_list)]
-                )
-            else:
-                self.focus_terminal(
-                    terminal_list[(terminal_index + 1) % len(terminal_list)]
-                )
+                pos = terminal.GetScreenPosition()
+                if keycode == ord("H") and pos.x - current_pos.x >= 0:
+                    continue
+                elif keycode == ord("J") and pos.y - current_pos.y <= 0:
+                    continue
+                elif keycode == ord("K") and pos.y - current_pos.y >= 0:
+                    continue
+                elif keycode == ord("L") and pos.x - current_pos.x <= 0:
+                    continue
+
+                distance = abs(pos.x - current_pos.x) + abs(pos.y - current_pos.y)
+                if nearest_distance is None or distance < nearest_distance:
+                    nearest_distance = distance
+                    nearest_terminal = terminal
+
+            if nearest_terminal:
+                self.focus_terminal(nearest_terminal)
 
         elif ctrl and shift and (keycode == ord("O") or keycode == ord("P")):
             hwnd_list = self.hwnd_to_terminal_window.keys()
