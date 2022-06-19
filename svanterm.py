@@ -558,20 +558,15 @@ class SvanTerm(wx.App):
     def Keyboard_Event(self, nCode, wParam, lParam):
         keycode = cast(lParam, POINTER(c_int))[0]
 
-        if (
-            wParam == win32con.WM_KEYDOWN
-            and (win32api.GetAsyncKeyState(win32con.VK_LCONTROL) & 0x8000)
-            and (win32api.GetAsyncKeyState(win32con.VK_LSHIFT) & 0x8000)
-        ):
-            hwnd = win32gui.GetForegroundWindow()
-            if (
-                keycode >= ord("A")
-                and keycode <= ord("Z")
-                or keycode >= win32con.VK_F1
-                and keycode <= win32con.VK_F12
-            ) and hwnd in self.hwnd_to_terminal_window:
-                self.process_hotkey(keycode, self.hwnd_to_terminal_window[hwnd])
-                return -1
+        if wParam == win32con.WM_KEYDOWN:
+            window = self.hwnd_to_terminal_window.get(win32gui.GetForegroundWindow())
+            if window and self.process_hotkey(
+                keycode,
+                window,
+                ctrl=win32api.GetAsyncKeyState(win32con.VK_LCONTROL) & 0x8000,
+                shift=win32api.GetAsyncKeyState(win32con.VK_LSHIFT) & 0x8000,
+            ):
+                return True
 
         # Broadcast to terminals (not yet working)
         # hwnd = win32gui.GetForegroundWindow()
@@ -688,7 +683,7 @@ class SvanTerm(wx.App):
             win32gui.SetParent(terminal.terminal_hwnd, terminal.GetHandle())
             win32gui.SetFocus(terminal.terminal_hwnd)
 
-    def process_hotkey(self, keycode, window):
+    def process_hotkey(self, keycode, window, ctrl, shift):
         active_terminal = window.tabs.GetCurrentPage().active_terminal
 
         if keycode >= win32con.VK_F1 and keycode <= win32con.VK_F12:
@@ -697,13 +692,13 @@ class SvanTerm(wx.App):
             if index < window.tabs.GetPageCount():
                 window.tabs.SetSelection(index)
 
-        elif keycode == ord("T"):
+        elif ctrl and shift and keycode == ord("T"):
             new_tab = Container(window.tabs, window.tabs.GetClientSize())
             new_terminal = Terminal(new_tab)
             window.tabs.AddTab(new_tab, new_terminal.title.ljust(8, " ")[:20])
             self.focus_terminal(new_terminal)
 
-        elif keycode == ord("E") or keycode == ord("R"):
+        elif ctrl and shift and keycode == ord("E") or keycode == ord("R"):
             new_splitter = Splitter(active_terminal.GetParent())
 
             if keycode == ord("R"):
@@ -716,10 +711,10 @@ class SvanTerm(wx.App):
             active_terminal.Reparent(new_splitter.panel1)
             new_splitter.panel1.OnSize()
 
-        elif keycode == ord("D"):
+        elif ctrl and shift and keycode == ord("D"):
             active_terminal.Destroy()
 
-        elif keycode in [ord("Z"), ord("X"), ord("A"), ord("S")]:
+        elif ctrl and shift and keycode in [ord("Z"), ord("X"), ord("A"), ord("S")]:
             child = active_terminal
             while isinstance(child.GetGrandParent(), Splitter):
                 splitter = child.GetGrandParent()
@@ -745,7 +740,7 @@ class SvanTerm(wx.App):
                     splitter.SetSashPosition(splitter.GetSashPosition() + 50)
                     break
 
-        elif keycode == ord("J") or keycode == ord("K"):
+        elif ctrl and shift and keycode == ord("J") or keycode == ord("K"):
             terminal_list = self.build_terminal_list(window.tabs.GetCurrentPage())
             terminal_index = terminal_list.index(active_terminal)
 
@@ -758,7 +753,7 @@ class SvanTerm(wx.App):
                     terminal_list[(terminal_index + 1) % len(terminal_list)]
                 )
 
-        elif keycode == ord("O") or keycode == ord("P"):
+        elif ctrl and shift and keycode == ord("O") or keycode == ord("P"):
             hwnd_list = self.hwnd_to_terminal_window.keys()
             if len(hwnd_list) == 1:
                 return
@@ -769,24 +764,24 @@ class SvanTerm(wx.App):
             else:
                 win32gui.SetFocus(hwnd_list[(window_index + 1) % len(hwnd_list)])
 
-        elif keycode == ord("W"):
+        elif ctrl and shift and keycode == ord("W"):
             window.tabs.GetCurrentPage().Hide()
             window.tabs.GetCurrentPage().Destroy()
 
-        elif keycode == ord("U"):
+        elif ctrl and shift and keycode == ord("U"):
             window.tabs.AdvanceSelection(False)
 
-        elif keycode == ord("I"):
+        elif ctrl and shift and keycode == ord("I"):
             window.tabs.AdvanceSelection(True)
 
-        elif keycode == ord("R"):
+        elif ctrl and shift and keycode == ord("R"):
             window.tabs.EditTab(window.tabs.GetSelection())
             window.tabs.FindFocus().SelectAll()
 
-        elif keycode == ord("N"):
+        elif ctrl and shift and keycode == ord("N"):
             self.spawn_window()
 
-        elif keycode == ord("F"):
+        elif ctrl and shift and keycode == ord("F"):
             self.find_dialog.text.SetValue("")
             self.find_dialog.Filter()
             pos = window.GetPosition()
@@ -800,6 +795,10 @@ class SvanTerm(wx.App):
                 )
             )
             self.find_dialog.Show()
+        else:
+            return False
+
+        return True
 
     def spawn_window(self):
         new_window = TerminalWindow()
