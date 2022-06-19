@@ -549,7 +549,7 @@ class SvanTerm(wx.App):
             [
                 "C:\\Users\\svant\\AppData\\Local\\wsltty\\bin\\mintty.exe",
                 "--class=" + terminal_class_name,
-                "--WSL=",
+                "--WSL=Ubuntu",
                 "-whide",
                 "-o",
                 "ZoomFontWithWindow=no",
