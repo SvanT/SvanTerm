@@ -173,7 +173,11 @@ class Terminal(wx.Window):
         self.text.SetSize((self.GetSize()[0], 20))
 
     def Destroy(self, event=None):
-        terminal_list = app.build_terminal_list(self.GetParentTab())
+        try:
+            terminal_list = app.build_terminal_list(self.GetParentTab())
+        except RuntimeError:
+            # Parent is probably already destroyed
+            return
 
         if len(terminal_list) > 1:
             if self.GetGrandParent().panel1 == self.GetParent():
