@@ -680,16 +680,17 @@ class SvanTerm(wx.App):
             if index < window.tabs.GetPageCount():
                 window.tabs.SetSelection(index)
 
-        elif ctrl and shift and keycode == ord("T"):
+        elif alt and keycode == ord("T"):
             new_tab = Container(window.tabs, window.tabs.GetClientSize())
             new_terminal = Terminal(new_tab)
             window.tabs.AddTab(new_tab, new_terminal.title.ljust(8, " ")[:20])
             self.focus_terminal(new_terminal)
 
-        elif ctrl and shift and (keycode == ord("E") or keycode == ord("R")):
+            # https://docs.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
+        elif alt and (keycode == 0xBB or keycode == 0xBD):
             new_splitter = Splitter(active_terminal.GetParent())
 
-            if keycode == ord("R"):
+            if keycode == 0xBD:
                 new_splitter.SplitHorizontally(new_splitter.panel1, new_splitter.panel2)
             else:
                 new_splitter.SplitVertically(new_splitter.panel1, new_splitter.panel2)
@@ -765,10 +766,10 @@ class SvanTerm(wx.App):
             window.tabs.GetCurrentPage().Hide()
             window.tabs.GetCurrentPage().Destroy()
 
-        elif ctrl and shift and keycode == ord("U"):
+        elif ctrl and shift and keycode == ord("K"):
             window.tabs.AdvanceSelection(False)
 
-        elif ctrl and shift and keycode == ord("I"):
+        elif ctrl and shift and keycode == ord("J"):
             window.tabs.AdvanceSelection(True)
 
         elif ctrl and shift and keycode == ord("R"):
