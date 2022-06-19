@@ -538,13 +538,7 @@ class SvanTerm(wx.App):
         return True
 
     def spawn_terminal(self):
-        process = subprocess.Popen(
-            [
-                "alacritty.exe",
-                "-e",
-                "ubuntu",
-            ]
-        )
+        process = subprocess.Popen(["alacritty.exe"])
 
         def callback(hwnd, hwnds):
             _, found_pid = win32process.GetWindowThreadProcessId(hwnd)
