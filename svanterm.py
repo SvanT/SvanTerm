@@ -736,17 +736,12 @@ class SvanTerm(wx.App):
                     child = splitter
                     continue
 
-                if (
-                    keycode in [ord("H"), ord("K")]
-                    and child.GetParent() == splitter.panel1
-                    or keycode in [ord("J"), ord("L")]
-                    and child.GetParent() == splitter.panel2
-                ):
+                if keycode in [ord("H"), ord("K")]:
                     splitter.SetSashPosition(splitter.GetSashPosition() - 50)
-                    break
                 else:
                     splitter.SetSashPosition(splitter.GetSashPosition() + 50)
-                    break
+
+                break
 
         elif alt and keycode in (ord("H"), ord("J"), ord("K"), ord("L")):
             current_pos = active_terminal.GetScreenPosition()
