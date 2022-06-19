@@ -712,7 +712,7 @@ class SvanTerm(wx.App):
             self.focus_terminal(new_terminal)
 
             # https://docs.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
-        elif ctrl and shift and (keycode == 0xBB or keycode == 0xBD):
+        elif alt and shift and (keycode == 0xBB or keycode == 0xBD):
             new_splitter = Splitter(active_terminal.GetParent())
 
             if keycode == 0xBD:
@@ -776,13 +776,13 @@ class SvanTerm(wx.App):
             if nearest_terminal:
                 self.focus_terminal(nearest_terminal)
 
-        elif ctrl and shift and (keycode == ord("O") or keycode == ord("P")):
+        elif ctrl and shift and keycode in (ord("K"), ord("J")):
             hwnd_list = list(self.hwnd_to_terminal_window.keys())
             if len(hwnd_list) == 1:
                 return
             window_index = hwnd_list.index(window.GetHandle())
 
-            if keycode == ord("O"):
+            if keycode == ord("K"):
                 win32gui.SetFocus(hwnd_list[(window_index - 1) % len(hwnd_list)])
             else:
                 win32gui.SetFocus(hwnd_list[(window_index + 1) % len(hwnd_list)])
@@ -791,10 +791,10 @@ class SvanTerm(wx.App):
             window.tabs.GetCurrentPage().Hide()
             window.tabs.GetCurrentPage().Destroy()
 
-        elif ctrl and shift and keycode == ord("K"):
+        elif ctrl and shift and keycode == ord("H"):
             window.tabs.AdvanceSelection(False)
 
-        elif ctrl and shift and keycode == ord("J"):
+        elif ctrl and shift and keycode == ord("L"):
             window.tabs.AdvanceSelection(True)
 
         elif ctrl and shift and keycode == ord("R"):
