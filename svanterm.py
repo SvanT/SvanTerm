@@ -1,5 +1,4 @@
 # Todos:
-# - Maximize pane
 # - Integrate tag dragging between windows with normal dragging in tabcontrol
 # - Broadcast to terminals
 # - Ctrl + Shift + arrow to walk through terminals in current tab? or 1-9 with hints
@@ -319,6 +318,7 @@ class TerminalWindow(wx.Frame):
         super(TerminalWindow, self).__init__(None, -1, PROGRAM_TITLE, size=(800, 600))
         self.SetBackgroundColour(wx.BLACK)
         self.tabs = TabControl(self)
+        self.Maximize()
         self.Show(True)
 
         app.hwnd_to_terminal_window[self.GetHandle()] = self
@@ -486,6 +486,9 @@ class SvanTerm(wx.App):
         self.dock_from = None
         self.last_active_terminal = None
         self.clicked_terminal = None
+        self.maximized_terminal = None
+        self.maximized_terminal_original_parent = None
+        self.maximized_container = None
         self.spawn_window()
 
         self.terminal_event_cfunc = CFUNCTYPE(
@@ -528,7 +531,7 @@ class SvanTerm(wx.App):
             random.choice(string.ascii_uppercase + string.digits) for _ in range(6)
         )
 
-        subprocess.Popen(
+        subprocess.check_call(
             [
                 "C:\\Users\\svant\\AppData\\Local\\wsltty\\bin\\mintty.exe",
                 "--class=" + terminal_class_name,
@@ -663,7 +666,8 @@ class SvanTerm(wx.App):
             terminal.text.enabled = True
             terminal.text.Refresh()
 
-        terminal.GetParentTab().active_terminal = terminal
+        if not self.maximized_terminal:
+            terminal.GetParentTab().active_terminal = terminal
 
         if set_focus:
             wx.CallAfter(self.set_focus, terminal, verify_foreground_window)
@@ -797,6 +801,28 @@ class SvanTerm(wx.App):
                 )
             )
             self.find_dialog.Show()
+
+        elif alt and keycode == ord("M"):
+            if not self.maximized_terminal:
+                self.maximized_terminal = active_terminal
+                self.maximized_terminal_original_parent = active_terminal.GetParent()
+                self.maximized_container = Container(window)
+                window.tabs.Hide()
+                window.tabs.Reparent(None)
+                active_terminal.Reparent(self.maximized_container)
+                window.Layout()
+                self.maximized_container.OnSize()
+            else:
+                window.tabs.Reparent(window)
+                window.tabs.Show()
+                self.maximized_terminal.Reparent(
+                    self.maximized_terminal_original_parent
+                )
+                self.maximized_terminal_original_parent.OnSize()
+                self.maximized_container.Destroy()
+                self.maximized_container = None
+                self.maximized_terminal = None
+                self.maximized_terminal_original_parent = None
         else:
             return False
 
@@ -870,20 +896,21 @@ class SvanTerm(wx.App):
         terminal.text.SetLabel(title)
         terminal.title = title
 
-        tab = terminal.GetParentTab()
-        if tab.active_terminal == terminal:
-            if tab.custom_name == "":
-                tab.GetParent().SetPageText(
-                    tab.GetParent().GetPageIndex(tab),
-                    win32gui.GetWindowText(hwnd).ljust(8, " ")[:20],
-                )
-            else:
-                tab.GetParent().SetPageText(
-                    tab.GetParent().GetPageIndex(tab), tab.custom_name
-                )
+        if not self.maximized_terminal:
+            tab = terminal.GetParentTab()
+            if tab.active_terminal == terminal:
+                if tab.custom_name == "":
+                    tab.GetParent().SetPageText(
+                        tab.GetParent().GetPageIndex(tab),
+                        win32gui.GetWindowText(hwnd).ljust(8, " ")[:20],
+                    )
+                else:
+                    tab.GetParent().SetPageText(
+                        tab.GetParent().GetPageIndex(tab), tab.custom_name
+                    )
 
-            if tab.GetParent().GetCurrentPage() == tab:
-                tab.GetGrandParent().SetTitle(title + " - " + PROGRAM_TITLE)
+                if tab.GetParent().GetCurrentPage() == tab:
+                    tab.GetGrandParent().SetTitle(title + " - " + PROGRAM_TITLE)
 
     def InitiateDragDrop(self, dock_from):
         if self.dock_from:
