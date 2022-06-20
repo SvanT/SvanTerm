@@ -5,6 +5,9 @@
 # - Config file with keyboard shortcuts
 # - Remove * import for ctypes
 # - Fix typings
+# - Doing splits while in maximized mode breaks navigation
+# - It seems like in some cases a new split is not resized properly (maybe doing it too early)
+# - Add global shortcut to bring svanterm to foreground, and if it is already toggle back to the last foreground window
 
 import ctypes
 
