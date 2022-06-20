@@ -679,13 +679,7 @@ class SvanTerm(wx.App):
     def process_hotkey(self, keycode, window, ctrl, shift, alt):
         active_terminal = window.tabs.GetCurrentPage().active_terminal
 
-        if keycode >= win32con.VK_F1 and keycode <= win32con.VK_F12:
-            index = keycode - win32con.VK_F1
-
-            if index < window.tabs.GetPageCount():
-                window.tabs.SetSelection(index)
-
-        elif ctrl and shift and keycode == ord("T"):
+        if ctrl and shift and keycode == ord("T"):
             new_tab = Container(window.tabs, window.tabs.GetClientSize())
             new_terminal = Terminal(new_tab)
             window.tabs.AddTab(new_tab, new_terminal.title.ljust(8, " ")[:20])
