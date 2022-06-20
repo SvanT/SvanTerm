@@ -5,7 +5,6 @@
 # - Config file with keyboard shortcuts
 # - Remove * import for ctypes
 # - Fix typings
-# - It seems like in some cases a new split is not resized properly (maybe doing it too early)
 # - Add global shortcut to bring svanterm to foreground, and if it is already toggle back to the last foreground window
 
 import ctypes
@@ -468,6 +467,11 @@ class MoveWindowThread(threading.Thread):
                 except queue.Empty:
                     break
 
+            # Processing the request directly seems to set the wrong initial size
+            # sometimes. I'm not sure if the terminal reports wrong size or if
+            # alacritty does something weird.
+            time.sleep(0.1)
+
             for terminal in terminals:
                 size = terminal.GetSize()
                 # Minimum size of 150x150, really small sizes messes up the terminal
@@ -479,8 +483,6 @@ class MoveWindowThread(threading.Thread):
                     max(size[1] - 20, 150),
                     True,
                 )
-
-            time.sleep(0.05)
 
 
 class SvanTerm(wx.App):
