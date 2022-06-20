@@ -3,6 +3,7 @@
 # - Remove * import for ctypes
 # - Fix typings
 # - Add global shortcut to bring svanterm to foreground, and if it is already toggle back to the last foreground window
+# - Highlight maximized pane
 
 import ctypes
 
