@@ -1,7 +1,4 @@
 # Todos:
-# - Integrate tag dragging between windows with normal dragging in tabcontrol
-# - Move windows to front in the Z-axis while docking
-# - Look into doing movewindow/setwindowpos completely async
 # - Config file with keyboard shortcuts
 # - Remove * import for ctypes
 # - Fix typings
