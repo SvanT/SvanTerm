@@ -5,7 +5,6 @@
 # - Config file with keyboard shortcuts
 # - Remove * import for ctypes
 # - Fix typings
-# - Doing splits while in maximized mode breaks navigation
 # - It seems like in some cases a new split is not resized properly (maybe doing it too early)
 # - Add global shortcut to bring svanterm to foreground, and if it is already toggle back to the last foreground window
 
@@ -679,10 +678,26 @@ class SvanTerm(wx.App):
             win32gui.SetParent(terminal.terminal_hwnd, terminal.GetHandle())
             win32gui.SetFocus(terminal.terminal_hwnd)
 
+    def unmaximize_terminal(self, window):
+        if (
+            self.maximized_terminal
+            and self.maximized_terminal_original_parent
+            and self.maximized_container
+        ):
+            window.tabs.Reparent(window)
+            window.tabs.Show()
+            self.maximized_terminal.Reparent(self.maximized_terminal_original_parent)
+            self.maximized_terminal_original_parent.OnSize()
+            self.maximized_container.Destroy()
+            self.maximized_container = None
+            self.maximized_terminal = None
+            self.maximized_terminal_original_parent = None
+
     def process_hotkey(self, keycode, window, ctrl, shift, alt):
         active_terminal = window.tabs.GetCurrentPage().active_terminal
 
         if ctrl and shift and keycode == ord("T"):
+            self.unmaximize_terminal(window)
             new_tab = Container(window.tabs, window.tabs.GetClientSize())
             new_terminal = Terminal(new_tab)
             window.tabs.AddTab(new_tab, new_terminal.title.ljust(8, " ")[:20])
@@ -690,6 +705,7 @@ class SvanTerm(wx.App):
 
             # https://docs.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
         elif alt and shift and (keycode == 0xBB or keycode == 0xBD):
+            self.unmaximize_terminal(window)
             new_splitter = Splitter(active_terminal.GetParent())
 
             if keycode == 0xBD:
@@ -703,9 +719,11 @@ class SvanTerm(wx.App):
             new_splitter.panel1.OnSize()
 
         elif ctrl and shift and keycode == ord("D"):
+            self.unmaximize_terminal(window)
             active_terminal.Destroy()
 
         elif alt and shift and keycode in (ord("H"), ord("J"), ord("K"), ord("L")):
+            self.unmaximize_terminal(window)
             child = active_terminal
             while isinstance(child.GetGrandParent(), Splitter):
                 splitter = child.GetGrandParent()
@@ -727,6 +745,7 @@ class SvanTerm(wx.App):
                 break
 
         elif alt and keycode in (ord("H"), ord("J"), ord("K"), ord("L")):
+            self.unmaximize_terminal(window)
             current_pos = active_terminal.GetScreenPosition()
             terminals = self.build_terminal_list(window.tabs.GetCurrentPage())
             nearest_distance = None
@@ -765,16 +784,20 @@ class SvanTerm(wx.App):
                 win32gui.SetFocus(hwnd_list[(window_index + 1) % len(hwnd_list)])
 
         elif ctrl and shift and keycode == ord("W"):
+            self.unmaximize_terminal(window)
             window.tabs.GetCurrentPage().Hide()
             window.tabs.GetCurrentPage().Destroy()
 
         elif ctrl and shift and keycode == ord("H"):
+            self.unmaximize_terminal(window)
             window.tabs.AdvanceSelection(False)
 
         elif ctrl and shift and keycode == ord("L"):
+            self.unmaximize_terminal(window)
             window.tabs.AdvanceSelection(True)
 
         elif ctrl and shift and keycode == ord("R"):
+            self.unmaximize_terminal(window)
             window.tabs.EditTab(window.tabs.GetSelection())
             window.tabs.FindFocus().SelectAll()
 
@@ -782,6 +805,7 @@ class SvanTerm(wx.App):
             self.spawn_window()
 
         elif alt and keycode == ord("F"):
+            self.unmaximize_terminal(window)
             self.find_dialog.text.SetValue("")
             self.find_dialog.Filter()
             pos = window.GetPosition()
@@ -797,21 +821,8 @@ class SvanTerm(wx.App):
             self.find_dialog.Show()
 
         elif alt and keycode == ord("M"):
-            if (
-                self.maximized_terminal
-                and self.maximized_container
-                and self.maximized_terminal_original_parent
-            ):
-                window.tabs.Reparent(window)
-                window.tabs.Show()
-                self.maximized_terminal.Reparent(
-                    self.maximized_terminal_original_parent
-                )
-                self.maximized_terminal_original_parent.OnSize()
-                self.maximized_container.Destroy()
-                self.maximized_container = None
-                self.maximized_terminal = None
-                self.maximized_terminal_original_parent = None
+            if self.maximized_terminal:
+                self.unmaximize_terminal(window)
             else:
                 self.maximized_terminal = active_terminal
                 self.maximized_terminal_original_parent = active_terminal.GetParent()
