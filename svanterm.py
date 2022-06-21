@@ -90,7 +90,12 @@ class Terminal(wx.Window):
         # after creation and in this case set it back to the TerminalWindow
         foreground_window = win32gui.GetForegroundWindow()
 
+        # TODO: This works to hide the flickering of alacritty spawning a terminal
+        #       but it probably shouldn't block the main UI thread
+        # self.GetParentTab().GetGrandParent().ToggleWindowStyle(wx.STAY_ON_TOP)
+        # time.sleep(0.2)
         self.terminal_hwnd = app.spawn_terminal()
+
         app.hwnd_to_terminal[self.terminal_hwnd] = self
 
         self.title = win32gui.GetWindowText(self.terminal_hwnd)
@@ -114,6 +119,8 @@ class Terminal(wx.Window):
                     win32gui.SetForegroundWindow(foreground_window)
 
                 time.sleep(0.1)
+
+            # self.GetParentTab().GetGrandParent().ToggleWindowStyle(wx.STAY_ON_TOP)
 
         threading.Thread(target=ensure_foreground_window).start()
 
