@@ -1,7 +1,5 @@
 # Todos:
 # - Config file with keyboard shortcuts
-# - Remove * import for ctypes
-# - Fix typings
 # - Add global shortcut to bring svanterm to foreground, and if it is already toggle back to the last foreground window
 # - Highlight maximized pane
 # - Block input including ctrl while spawning terminal (might fix the shell ctrl+t shortcut sometimes being triggered after pressing ctrl+shift+t)
@@ -28,7 +26,7 @@ import wx
 import wx.lib.agw.aui as aui
 import wx.lib.agw.ultimatelistctrl as ultimatelistctrl
 
-from ctypes import *
+from ctypes import CFUNCTYPE, POINTER, cast, c_void_p, c_int, windll
 
 PROGRAM_TITLE = "SvanTerm 0.2"
 DOCK_TOP = 1
