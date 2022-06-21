@@ -4,7 +4,6 @@
 # - Highlight maximized pane
 # - Block input including ctrl while spawning terminal (might fix the shell ctrl+t shortcut sometimes being triggered after pressing ctrl+shift+t)
 # - Can we hide, move or put alacritty behind svanterm while spawning a new alacritty instance?
-# - Investigate if pywintypes.error catch is still needed in set_focus
 
 import ctypes
 
@@ -86,7 +85,7 @@ class Terminal(wx.Window):
         self.SetBackgroundColour(wx.BLACK)
 
         # For some reason we are losing the focus during terminal creation,
-        # maybe mintty/wslbridge2 does steal is? However check if focus changes right
+        # maybe alacritty does steal is? However check if focus changes right
         # after creation and in this case set it back to the TerminalWindow
         foreground_window = win32gui.GetForegroundWindow()
 
@@ -527,7 +526,7 @@ class SvanTerm(wx.App):
         self.dock_hint.SetTransparent(127)
 
         # Use a keyboard hook instead of regular (hot)keys to filter out
-        # Ctrl-Shift-<char> from triggering thrash characters in mintty
+        # Ctrl-Shift-<char> from triggering thrash characters in alacritty
         self.keyboard_hook_pointer = CFUNCTYPE(c_int, c_int, c_int, POINTER(c_void_p))(
             self.Keyboard_Event
         )
@@ -671,13 +670,7 @@ class SvanTerm(wx.App):
         ):
             return
 
-        try:
-            win32gui.SetFocus(terminal.terminal_hwnd)
-
-        # We might get access denied if mintty has stealed the terminal (i.e. the settings dialog has been opened)
-        except pywintypes.error:
-            win32gui.SetParent(terminal.terminal_hwnd, terminal.GetHandle())
-            win32gui.SetFocus(terminal.terminal_hwnd)
+        win32gui.SetFocus(terminal.terminal_hwnd)
 
     def unmaximize_terminal(self, window):
         if (
