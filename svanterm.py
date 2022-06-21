@@ -4,6 +4,7 @@
 # - Block input including ctrl while spawning terminal (might fix the shell ctrl+t shortcut sometimes being triggered after pressing ctrl+shift+t)
 # - Can we hide, move or put alacritty behind svanterm while spawning a new alacritty instance?
 # - Add padding to terminal headers
+# - Ctrl+D in a maximized terminal messes up the app
 
 import ctypes
 
