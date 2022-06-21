@@ -4,6 +4,9 @@
 # - Fix typings
 # - Add global shortcut to bring svanterm to foreground, and if it is already toggle back to the last foreground window
 # - Highlight maximized pane
+# - Block input including ctrl while spawning terminal (might fix the shell ctrl+t shortcut sometimes being triggered after pressing ctrl+shift+t)
+# - Can we hide, move or put alacritty behind svanterm while spawning a new alacritty instance?
+# - Investigate if pywintypes.error catch is still needed in set_focus
 
 import ctypes
 
