@@ -1,7 +1,6 @@
 # Todos:
 # - Config file with keyboard shortcuts
 # - Add global shortcut to bring svanterm to foreground, and if it is already toggle back to the last foreground window
-# - Highlight maximized pane
 # - Block input including ctrl while spawning terminal (might fix the shell ctrl+t shortcut sometimes being triggered after pressing ctrl+shift+t)
 # - Can we hide, move or put alacritty behind svanterm while spawning a new alacritty instance?
 # - Add padding to terminal headers
@@ -42,6 +41,7 @@ class TerminalHeader(wx.StaticText):
 
         self.label = label
         self.enabled = True
+        self.maximized = False
         self.Bind(wx.EVT_PAINT, self.on_paint)
         self.Bind(wx.EVT_ERASE_BACKGROUND, lambda event: None)
         self.Bind(wx.EVT_SIZE, self.on_size)
@@ -49,7 +49,12 @@ class TerminalHeader(wx.StaticText):
     def on_paint(self, event):
         dc = wx.AutoBufferedPaintDCFactory(self)
 
-        if self.enabled:
+        if self.maximized:
+            dc.GradientFillLinear(
+                self.GetClientRect(), wx.BLUE, wx.Colour(0, 0, 100), wx.SOUTH
+            )
+            dc.SetTextForeground(wx.WHITE)
+        elif self.enabled:
             dc.GradientFillLinear(
                 self.GetClientRect(), wx.RED, wx.Colour(100, 0, 0), wx.SOUTH
             )
@@ -686,6 +691,8 @@ class SvanTerm(wx.App):
             and self.maximized_terminal_original_parent
             and self.maximized_container
         ):
+            self.maximized_terminal.text.maximized = False
+            self.maximized_terminal.text.Refresh()
             window.tabs.Reparent(window)
             window.tabs.Show()
             self.maximized_terminal.Reparent(self.maximized_terminal_original_parent)
@@ -827,6 +834,8 @@ class SvanTerm(wx.App):
                 self.unmaximize_terminal(window)
             else:
                 self.maximized_terminal = active_terminal
+                self.maximized_terminal.text.maximized = True
+                self.maximized_terminal.text.Refresh()
                 self.maximized_terminal_original_parent = active_terminal.GetParent()
                 self.maximized_container = Container(window)
                 window.tabs.Hide()
