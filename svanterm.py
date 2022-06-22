@@ -4,7 +4,6 @@
 # - Block input including ctrl while spawning terminal (might fix the shell ctrl+t shortcut sometimes being triggered after pressing ctrl+shift+t)
 # - Can we hide, move or put alacritty behind svanterm while spawning a new alacritty instance?
 # - Add padding to terminal headers
-# - Ctrl+D in a maximized terminal messes up the app
 
 import ctypes
 
@@ -884,6 +883,11 @@ class SvanTerm(wx.App):
     ):
         if hwnd in self.hwnd_to_terminal:
             if eventType == win32con.EVENT_OBJECT_DESTROY and idObject == 0:
+                terminal = self.hwnd_to_terminal[hwnd]
+                window = terminal
+                while not isinstance(window, TerminalWindow):
+                    window = window.GetParent()
+                self.unmaximize_terminal(window)
                 self.hwnd_to_terminal[hwnd].Destroy()
             if eventType == win32con.EVENT_OBJECT_NAMECHANGE:
                 self.update_title(hwnd)
