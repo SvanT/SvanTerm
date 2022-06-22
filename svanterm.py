@@ -4,7 +4,6 @@
 # - Block input including ctrl while spawning terminal (might fix the shell ctrl+t shortcut sometimes being triggered after pressing ctrl+shift+t)
 # - Can we hide, move or put alacritty behind svanterm while spawning a new alacritty instance?
 # - Add padding to terminal headers
-# - Maximized terminal properties should probably be per TerminalWindow
 
 import ctypes
 
@@ -209,6 +208,13 @@ class Terminal(wx.Window):
 
         return child
 
+    def GetParentWindow(self):
+        current = self
+        while not isinstance(current, TerminalWindow):
+            current = current.GetParent()
+
+        return current
+
     def OnDestroy(self, event):
         try:
             win32api.PostMessage(self.terminal_hwnd, win32con.WM_QUIT)
@@ -344,6 +350,10 @@ class TabControl(aui.AuiNotebook):
 class TerminalWindow(wx.Frame):
     def __init__(self):
         super(TerminalWindow, self).__init__(None, -1, PROGRAM_TITLE, size=(800, 600))
+        self.maximized_terminal = None
+        self.maximized_terminal_original_parent = None
+        self.maximized_container = None
+
         self.SetBackgroundColour(wx.BLACK)
         self.tabs = TabControl(self)
         self.Maximize()
@@ -522,9 +532,6 @@ class SvanTerm(wx.App):
         self.dock_from = None
         self.last_active_terminal = None
         self.clicked_terminal = None
-        self.maximized_terminal = None
-        self.maximized_terminal_original_parent = None
-        self.maximized_container = None
         self.spawn_window()
 
         self.terminal_event_cfunc = CFUNCTYPE(
@@ -674,7 +681,7 @@ class SvanTerm(wx.App):
             terminal.text.enabled = True
             terminal.text.Refresh()
 
-        if not self.maximized_terminal:
+        if not terminal.GetParentWindow().maximized_terminal:
             terminal.GetParentTab().active_terminal = terminal
 
         if set_focus:
@@ -693,20 +700,22 @@ class SvanTerm(wx.App):
 
     def unmaximize_terminal(self, window):
         if (
-            self.maximized_terminal
-            and self.maximized_terminal_original_parent
-            and self.maximized_container
+            window.maximized_terminal
+            and window.maximized_terminal_original_parent
+            and window.maximized_container
         ):
-            self.maximized_terminal.text.maximized = False
-            self.maximized_terminal.text.Refresh()
+            window.maximized_terminal.text.maximized = False
+            window.maximized_terminal.text.Refresh()
             window.tabs.Reparent(window)
             window.tabs.Show()
-            self.maximized_terminal.Reparent(self.maximized_terminal_original_parent)
-            self.maximized_terminal_original_parent.OnSize()
-            self.maximized_container.Destroy()
-            self.maximized_container = None
-            self.maximized_terminal = None
-            self.maximized_terminal_original_parent = None
+            window.maximized_terminal.Reparent(
+                window.maximized_terminal_original_parent
+            )
+            window.maximized_terminal_original_parent.OnSize()
+            window.maximized_container.Destroy()
+            window.maximized_container = None
+            window.maximized_terminal = None
+            window.maximized_terminal_original_parent = None
 
     def process_hotkey(self, keycode, window, ctrl, shift, alt):
         active_terminal = window.tabs.GetCurrentPage().active_terminal
@@ -836,19 +845,19 @@ class SvanTerm(wx.App):
             self.find_dialog.Show()
 
         elif alt and keycode == ord("M"):
-            if self.maximized_terminal:
+            if window.maximized_terminal:
                 self.unmaximize_terminal(window)
             else:
-                self.maximized_terminal = active_terminal
-                self.maximized_terminal.text.maximized = True
-                self.maximized_terminal.text.Refresh()
-                self.maximized_terminal_original_parent = active_terminal.GetParent()
-                self.maximized_container = Container(window)
+                window.maximized_terminal = active_terminal
+                window.maximized_terminal.text.maximized = True
+                window.maximized_terminal.text.Refresh()
+                window.maximized_terminal_original_parent = active_terminal.GetParent()
+                window.maximized_container = Container(window)
                 window.tabs.Hide()
                 window.tabs.Reparent(None)
-                active_terminal.Reparent(self.maximized_container)
+                active_terminal.Reparent(window.maximized_container)
                 window.Layout()
-                self.maximized_container.OnSize()
+                window.maximized_container.OnSize()
         else:
             return False
 
@@ -890,11 +899,8 @@ class SvanTerm(wx.App):
         if hwnd in self.hwnd_to_terminal:
             if eventType == win32con.EVENT_OBJECT_DESTROY and idObject == 0:
                 terminal = self.hwnd_to_terminal[hwnd]
-                window = terminal
-                while not isinstance(window, TerminalWindow):
-                    window = window.GetParent()
-
-                if app.maximized_terminal == terminal:
+                window = terminal.GetParentWindow()
+                if window.maximized_terminal == terminal:
                     self.unmaximize_terminal(window)
 
                 self.hwnd_to_terminal[hwnd].Destroy()
@@ -930,7 +936,7 @@ class SvanTerm(wx.App):
         terminal.text.SetLabel(title)
         terminal.title = title
 
-        if not self.maximized_terminal:
+        if not terminal.GetParentWindow().maximized_terminal:
             tab = terminal.GetParentTab()
             if tab.active_terminal == terminal:
                 if tab.custom_name == "":
