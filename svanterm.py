@@ -4,6 +4,7 @@
 # - Block input including ctrl while spawning terminal (might fix the shell ctrl+t shortcut sometimes being triggered after pressing ctrl+shift+t)
 # - Can we hide, move or put alacritty behind svanterm while spawning a new alacritty instance?
 # - Add padding to terminal headers
+# - Maximized terminal properties should probably be per TerminalWindow
 
 import ctypes
 
@@ -484,7 +485,12 @@ class MoveWindowThread(threading.Thread):
             time.sleep(0.1)
 
             for terminal in terminals:
-                size = terminal.GetSize()
+                try:
+                    size = terminal.GetSize()
+                except RuntimeError:
+                    # Terminal is probably removed
+                    continue
+
                 # Minimum size of 150x150, really small sizes messes up the terminal
                 win32gui.MoveWindow(
                     terminal.terminal_hwnd,
@@ -887,7 +893,10 @@ class SvanTerm(wx.App):
                 window = terminal
                 while not isinstance(window, TerminalWindow):
                     window = window.GetParent()
-                self.unmaximize_terminal(window)
+
+                if app.maximized_terminal == terminal:
+                    self.unmaximize_terminal(window)
+
                 self.hwnd_to_terminal[hwnd].Destroy()
             if eventType == win32con.EVENT_OBJECT_NAMECHANGE:
                 self.update_title(hwnd)
